@@ -6,7 +6,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.viewport.FitViewport
-import org.mackclan.yorg.components.Selector
+import org.mackclan.yorg.components.Movable
 import org.mackclan.yorg.components.Sprite
 import org.mackclan.yorg.components.Viewport
 import kotlin.math.floor
@@ -14,13 +14,13 @@ import kotlin.math.floor
 class Clicks : EntitySystem() {
     private lateinit var entities : ImmutableArray<Entity>
 
-    private val selectorMap = ComponentMapper.getFor(Selector::class.java)
+    private val movableMap = ComponentMapper.getFor(Movable::class.java)
     private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
 
     private lateinit var viewport : FitViewport
 
     override fun addedToEngine(engine: Engine){
-        entities = engine.getEntitiesFor(Family.all(Sprite::class.java, Selector::class.java).get())
+        entities = engine.getEntitiesFor(Family.all(Sprite::class.java, Movable::class.java).get())
         val camera = engine.getEntitiesFor(Family.all(Viewport::class.java).get()).first()
         viewport = (camera.components.first() as Viewport).viewport
     }
@@ -37,7 +37,7 @@ class Clicks : EntitySystem() {
 
             for (entity in entities){
                 val sprite = spriteMap.get(entity).sprite
-                val selector = selectorMap.get(entity)
+                val selector = movableMap.get(entity)
                 if (sprite.x == touchPos.x && sprite.y == touchPos.y){
                     selector.selected = !selector.selected
                     unitClicked = true

@@ -11,7 +11,7 @@ fun main() {
     if (StartupHelper.startNewJvmIfRequired())
       return
     Lwjgl3Application(org.mackclan.yorg.Main(), Lwjgl3ApplicationConfiguration().apply {
-        setTitle("pong")
+        setTitle("yorg")
         //// Vsync limits the frames per second to what your hardware can display, and helps eliminate
         //// screen tearing. This setting doesn't always work on Linux, so the line after is a safeguard.
         useVsync(true)
