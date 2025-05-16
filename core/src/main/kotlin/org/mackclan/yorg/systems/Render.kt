@@ -73,89 +73,96 @@ class Render : EntitySystem() {
 
         for (selected in selectedSprites){
             val sprite = spriteMap.get(selected).sprite
-
-            // Highlight this unit
-            var rightX = sprite.x + sprite.width
-            var topY = sprite.y + sprite.height
-            shapeRenderer.color = Color.YELLOW
-            shapeRenderer.line(rightX, sprite.y, rightX, topY)       // right
-            shapeRenderer.line(sprite.x, sprite.y, sprite.x, topY)   // left
-            shapeRenderer.line(sprite.x, topY, rightX, topY)         // top
-            shapeRenderer.line(sprite.x, sprite.y, rightX, sprite.y) // bottom
-
-            // Show the range
+            drawHighlight(sprite)
             val range = movableMap.get(selected).range
-            shapeRenderer.color = Color.BLUE
+            drawRange(sprite, range)
 
-            // Lines from up -> right
-            var leftX = sprite.x
-            var bottomY = sprite.y + range
-            rightX = sprite.x + sprite.width
-            topY = sprite.y + sprite.height + range
-            shapeRenderer.line(leftX, bottomY, leftX, topY)
-            shapeRenderer.line(leftX, topY, rightX, topY)
-            shapeRenderer.line(rightX, bottomY, rightX, topY)
-            for (i in 1..<range){
-                topY -= sprite.height
-                bottomY -= sprite.height
-                rightX += sprite.width
-                leftX += sprite.width
-                shapeRenderer.line(leftX, topY, rightX, topY)
-                shapeRenderer.line(rightX, topY, rightX, bottomY)
-            }
-
-            // Lines from down -> left
-            leftX = sprite.x
-            bottomY = sprite.y - range
-            rightX = sprite.x + sprite.width
-            topY = sprite.y - range + sprite.height
-            shapeRenderer.line(leftX, bottomY, leftX, topY)
-            shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-            shapeRenderer.line(rightX, bottomY, rightX, topY)
-            for (i in 1..<range){
-                topY += sprite.height
-                bottomY += sprite.height
-                rightX -= sprite.width
-                leftX -= sprite.width
-                shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-                shapeRenderer.line(leftX, topY, leftX, bottomY)
-            }
-
-            // Lines from left -> up
-            leftX = sprite.x - range
-            bottomY = sprite.y
-            rightX = sprite.x - range + sprite.width
-            topY = sprite.y + sprite.height
-            shapeRenderer.line(leftX, bottomY, leftX, topY)
-            shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-            shapeRenderer.line(leftX, topY, rightX, topY)
-            for (i in 1..<range){
-                topY += sprite.height
-                bottomY += sprite.height
-                rightX += sprite.width
-                leftX += sprite.width
-                shapeRenderer.line(leftX, topY, rightX, topY)
-                shapeRenderer.line(leftX, topY, leftX, bottomY)
-            }
-
-            // Lines from right -> down
-            leftX = sprite.x + range
-            bottomY = sprite.y
-            rightX = sprite.x + range + sprite.width
-            topY = sprite.y + sprite.height
-            shapeRenderer.line(rightX, bottomY, rightX, topY)
-            shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-            shapeRenderer.line(leftX, topY, rightX, topY)
-            for (i in 1..<range){
-                topY -= sprite.height
-                bottomY -= sprite.height
-                rightX -= sprite.width
-                leftX -= sprite.width
-                shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-                shapeRenderer.line(rightX, topY, rightX, bottomY)
-            }
         }
 
         shapeRenderer.end()
+    }
+
+    private fun drawHighlight(sprite: com.badlogic.gdx.graphics.g2d.Sprite) {
+        var rightX = sprite.x + sprite.width
+        var topY = sprite.y + sprite.height
+        shapeRenderer.color = Color.YELLOW
+        shapeRenderer.line(rightX, sprite.y, rightX, topY)       // right
+        shapeRenderer.line(sprite.x, sprite.y, sprite.x, topY)   // left
+        shapeRenderer.line(sprite.x, topY, rightX, topY)         // top
+        shapeRenderer.line(sprite.x, sprite.y, rightX, sprite.y) // bottom
+
+    }
+
+    private fun drawRange(sprite : com.badlogic.gdx.graphics.g2d.Sprite, range : Int){
+        shapeRenderer.color = Color.BLUE
+
+        // Lines from up -> right
+        var leftX = sprite.x
+        var bottomY = sprite.y + range
+        var rightX = sprite.x + sprite.width
+        var topY = sprite.y + sprite.height + range
+        shapeRenderer.line(leftX, bottomY, leftX, topY)
+        shapeRenderer.line(leftX, topY, rightX, topY)
+        shapeRenderer.line(rightX, bottomY, rightX, topY)
+        for (i in 1 until range){
+            topY -= sprite.height
+            bottomY -= sprite.height
+            rightX += sprite.width
+            leftX += sprite.width
+            shapeRenderer.line(leftX, topY, rightX, topY)
+            shapeRenderer.line(rightX, topY, rightX, bottomY)
+        }
+
+        // Lines from down -> left
+        leftX = sprite.x
+        bottomY = sprite.y - range
+        rightX = sprite.x + sprite.width
+        topY = sprite.y - range + sprite.height
+        shapeRenderer.line(leftX, bottomY, leftX, topY)
+        shapeRenderer.line(leftX, bottomY, rightX, bottomY)
+        shapeRenderer.line(rightX, bottomY, rightX, topY)
+        for (i in 1 until range){
+            topY += sprite.height
+            bottomY += sprite.height
+            rightX -= sprite.width
+            leftX -= sprite.width
+            shapeRenderer.line(leftX, bottomY, rightX, bottomY)
+            shapeRenderer.line(leftX, topY, leftX, bottomY)
+        }
+
+        // Lines from left -> up
+        leftX = sprite.x - range
+        bottomY = sprite.y
+        rightX = sprite.x - range + sprite.width
+        topY = sprite.y + sprite.height
+        shapeRenderer.line(leftX, bottomY, leftX, topY)
+        shapeRenderer.line(leftX, bottomY, rightX, bottomY)
+        shapeRenderer.line(leftX, topY, rightX, topY)
+        for (i in 1 until range){
+            topY += sprite.height
+            bottomY += sprite.height
+            rightX += sprite.width
+            leftX += sprite.width
+            shapeRenderer.line(leftX, topY, rightX, topY)
+            shapeRenderer.line(leftX, topY, leftX, bottomY)
+        }
+
+        // Lines from right -> down
+        leftX = sprite.x + range
+        bottomY = sprite.y
+        rightX = sprite.x + range + sprite.width
+        topY = sprite.y + sprite.height
+        shapeRenderer.line(rightX, bottomY, rightX, topY)
+        shapeRenderer.line(leftX, bottomY, rightX, bottomY)
+        shapeRenderer.line(leftX, topY, rightX, topY)
+        for (i in 1 until range){
+            topY -= sprite.height
+            bottomY -= sprite.height
+            rightX -= sprite.width
+            leftX -= sprite.width
+            shapeRenderer.line(leftX, bottomY, rightX, bottomY)
+            shapeRenderer.line(rightX, topY, rightX, bottomY)
+        }
+
     }
 }

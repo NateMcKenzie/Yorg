@@ -9,6 +9,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport
 import org.mackclan.yorg.components.Movable
 import org.mackclan.yorg.components.Sprite
 import org.mackclan.yorg.components.Viewport
+import kotlin.math.abs
 import kotlin.math.floor
 
 class Clicks : EntitySystem() {
@@ -47,10 +48,19 @@ class Clicks : EntitySystem() {
             if (!unitClicked){
                 for (entity in selected){
                     val sprite = spriteMap.get(entity).sprite
-                    sprite.x = touchPos.x
-                    sprite.y = touchPos.y
+                    val distance = findSquaredDistance(sprite.x.toInt(), sprite.y.toInt(), touchPos.x.toInt(), touchPos.y.toInt())
+                    if (distance <= 5){
+                        sprite.x = touchPos.x
+                        sprite.y = touchPos.y
+                    }
                 }
             }
         }
+    }
+
+    private fun findSquaredDistance(x1 : Int, y1 : Int, x2 : Int, y2 : Int) : Int{
+        // TODO: Does not account for obstacles, probably use BFS in future
+        // In fact, the drawing won't work either. Distance might be its own whole system that does logic and rendering
+        return abs(x2 - x1) + abs(y2 - y1)
     }
 }
