@@ -7,39 +7,38 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ScreenUtils
-import com.badlogic.gdx.utils.viewport.FitViewport
-import org.mackclan.yorg.components.Movable
+import org.mackclan.yorg.components.Controlled
 import org.mackclan.yorg.components.Sprite
-import org.mackclan.yorg.components.Viewport
+import org.mackclan.yorg.components.GameState
 
 class Render : EntitySystem() {
     private lateinit var entities : ImmutableArray<Entity>
     private lateinit var movables : ImmutableArray<Entity>
-    private lateinit var viewport: FitViewport
+    private lateinit var state: GameState
 
     private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
-    private val movableMap = ComponentMapper.getFor(Movable::class.java)
+    private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val batch by lazy { SpriteBatch() }
     private val shapeRenderer by lazy { ShapeRenderer() }
 
 
     override fun addedToEngine(engine: Engine){
         entities = engine.getEntitiesFor(Family.all(Sprite::class.java).get())
-        movables = engine.getEntitiesFor(Family.all(Movable::class.java).get())
-        val camera = engine.getEntitiesFor(Family.all(Viewport::class.java).get()).first()
-        viewport = (camera.components.first() as Viewport).viewport
+        movables = engine.getEntitiesFor(Family.all(Controlled::class.java).get())
+        val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
+        state = gameState.components.first() as GameState
     }
 
     override fun update(deltaTime : Float){
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f)
-        viewport.apply()
-        batch.projectionMatrix = viewport.camera.combined
+        state.viewport.apply()
+        batch.projectionMatrix = state.viewport.camera.combined
         val selectedSprites = Array<Entity>()
         batch.begin()
         for (entity in entities) {
             val sprite: Sprite = spriteMap.get(entity)
             sprite.sprite.draw(batch)
-            if (movableMap.has(entity) && movableMap.get(entity).selected){
+            if (controlledMap.has(entity) && controlledMap.get(entity).selected){
                 selectedSprites.add(entity)
             }
         }
@@ -50,15 +49,15 @@ class Render : EntitySystem() {
     }
 
     fun resize(width: Int, height: Int) {
-        viewport.update(width, height, true)
+        state.viewport.update(width, height, true)
     }
 
     private fun drawShapes(selectedSprites: Array<Entity>) {
-        val cam = viewport.camera
-        val minX = cam.position.x - viewport.worldWidth / 2
-        val maxX = cam.position.x + viewport.worldWidth / 2
-        val minY = cam.position.y - viewport.worldHeight / 2
-        val maxY = cam.position.y + viewport.worldHeight / 2
+        val cam = state.viewport.camera
+        val minX = cam.position.x - state.viewport.worldWidth / 2
+        val maxX = cam.position.x + state.viewport.worldWidth / 2
+        val minY = cam.position.y - state.viewport.worldHeight / 2
+        val maxY = cam.position.y + state.viewport.worldHeight / 2
 
         shapeRenderer.projectionMatrix = cam.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
@@ -74,7 +73,7 @@ class Render : EntitySystem() {
         for (selected in selectedSprites){
             val sprite = spriteMap.get(selected).sprite
             drawHighlight(sprite)
-            val range = movableMap.get(selected).range
+            val range = controlledMap.get(selected).range
             drawRange(sprite, range)
 
         }

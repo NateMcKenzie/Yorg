@@ -1,10 +1,10 @@
 package org.mackclan.yorg.entities
 
 import com.badlogic.ashley.core.Entity
-import org.mackclan.yorg.components.Viewport
+import org.mackclan.yorg.components.GameState
 
-fun createCamera() : Entity{
+fun createGameState() : Entity{
     val entity = Entity()
-    entity.add(Viewport())
+    entity.add(GameState())
     return entity
 }

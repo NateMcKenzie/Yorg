@@ -1,12 +1,12 @@
 package org.mackclan.yorg.entities
 
 import com.badlogic.ashley.core.Entity
-import org.mackclan.yorg.components.Movable
+import org.mackclan.yorg.components.Controlled
 import org.mackclan.yorg.components.Sprite
 
-fun createUnit() : Entity{
+fun createUnit(xPos : Float, yPos : Float, range: Int, playerControlled: Boolean) : Entity{
     val entity = Entity()
-    entity.add(Sprite(0f, 0f, 1f, 1f, "graphics/mech.png"))
-    entity.add(Movable(5))
+    entity.add(Sprite(xPos, yPos, 1f, 1f, "graphics/mech.png"))
+    entity.add(Controlled(range, playerControlled))
     return entity
 }

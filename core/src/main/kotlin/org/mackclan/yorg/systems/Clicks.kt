@@ -4,56 +4,63 @@ import com.badlogic.ashley.core.*
 import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.utils.Array
-import com.badlogic.gdx.utils.viewport.FitViewport
-import org.mackclan.yorg.components.Movable
+import org.mackclan.yorg.components.Controlled
+import org.mackclan.yorg.components.GameState
 import org.mackclan.yorg.components.Sprite
-import org.mackclan.yorg.components.Viewport
 import kotlin.math.abs
 import kotlin.math.floor
 
 class Clicks : EntitySystem() {
     private lateinit var entities : ImmutableArray<Entity>
 
-    private val movableMap = ComponentMapper.getFor(Movable::class.java)
+    private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
 
-    private lateinit var viewport : FitViewport
+    private lateinit var state : GameState
 
     override fun addedToEngine(engine: Engine){
-        entities = engine.getEntitiesFor(Family.all(Sprite::class.java, Movable::class.java).get())
-        val camera = engine.getEntitiesFor(Family.all(Viewport::class.java).get()).first()
-        viewport = (camera.components.first() as Viewport).viewport
+        entities = engine.getEntitiesFor(Family.all(Sprite::class.java, Controlled::class.java).get())
+        val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
+        state = gameState.components.first() as GameState
     }
 
     override fun update(deltaTime : Float){
         if (Gdx.input.justTouched()){
             val touchPos = Vector2()
             touchPos.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat()) // This is window coords (in pixels y increases from top down)
-            viewport.unproject(touchPos)
+            state.viewport.unproject(touchPos)
             touchPos.set(floor(touchPos.x), floor(touchPos.y))
 
             var unitClicked = false
-            var selected = Array<Entity>()
+            var selected : Entity? = null
 
             for (entity in entities){
                 val sprite = spriteMap.get(entity).sprite
-                val selector = movableMap.get(entity)
-                if (sprite.x == touchPos.x && sprite.y == touchPos.y){
-                    selector.selected = !selector.selected
+                val controlled = controlledMap.get(entity)
+                if (sprite.x == touchPos.x && sprite.y == touchPos.y
+                    && state.playerTurn == controlled.playerControlled){
+                    controlled.selected = !controlled.selected
                     unitClicked = true
+                } else if (selected != null){
+                    controlled.selected = false
                 }
-                if (selector.selected) selected.add(entity)
+                if (controlled.selected){
+                    selected?.getComponent(Controlled::class.java)?.selected = false
+                    selected = entity
+                }
             }
-            if (!unitClicked){
-                for (entity in selected){
-                    val sprite = spriteMap.get(entity).sprite
-                    val distance = findSquaredDistance(sprite.x.toInt(), sprite.y.toInt(), touchPos.x.toInt(), touchPos.y.toInt())
-                    if (distance <= 5){
-                        sprite.x = touchPos.x
-                        sprite.y = touchPos.y
-                    }
+            if (!unitClicked && selected != null){
+                // Move selected
+                val sprite = spriteMap.get(selected).sprite
+                val distance = findSquaredDistance(sprite.x.toInt(), sprite.y.toInt(), touchPos.x.toInt(), touchPos.y.toInt())
+                if (distance <= 5){
+                    sprite.x = touchPos.x
+                    sprite.y = touchPos.y
                 }
+
+                // Change turns
+                state.playerTurn = !state.playerTurn
+                controlledMap.get(selected).selected = false
             }
         }
     }

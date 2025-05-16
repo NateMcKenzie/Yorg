@@ -3,7 +3,7 @@ package org.mackclan.yorg.views
 import com.badlogic.ashley.core.Engine
 import com.badlogic.gdx.ApplicationListener
 import com.badlogic.gdx.Gdx
-import org.mackclan.yorg.entities.createCamera
+import org.mackclan.yorg.entities.createGameState
 import org.mackclan.yorg.entities.createUnit
 import org.mackclan.yorg.systems.Clicks
 import org.mackclan.yorg.systems.Render
@@ -18,8 +18,9 @@ class GameView : ApplicationListener{
     private val clicks by lazy { Clicks() }
 
     override fun create() {
-        engine.addEntity(createUnit())
-        engine.addEntity(createCamera())
+        engine.addEntity(createUnit(0f,0f, 5, true))
+        engine.addEntity(createUnit(10f,10f, 5, false))
+        engine.addEntity(createGameState())
 
         engine.addSystem(render)
         engine.addSystem(clicks)
