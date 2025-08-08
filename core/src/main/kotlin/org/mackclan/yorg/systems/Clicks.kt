@@ -49,6 +49,7 @@ class Clicks : EntitySystem() {
                     selected = entity
                 }
             }
+            state.selected = selected
             if (!unitClicked && selected != null){
                 // Move selected
                 val sprite = spriteMap.get(selected).sprite
@@ -56,11 +57,12 @@ class Clicks : EntitySystem() {
                 if (distance <= 5){
                     sprite.x = touchPos.x
                     sprite.y = touchPos.y
-                }
 
-                // Change turns
-                state.playerTurn = !state.playerTurn
-                controlledMap.get(selected).selected = false
+                    // Change turns
+                    state.playerTurn = !state.playerTurn
+                    state.selected = null
+                    controlledMap.get(selected).selected = false
+                }
             }
         }
     }
