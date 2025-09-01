@@ -6,7 +6,6 @@ import com.badlogic.gdx.Gdx
 import org.mackclan.yorg.entities.createGameState
 import org.mackclan.yorg.entities.createUnit
 import org.mackclan.yorg.systems.Clicks
-import org.mackclan.yorg.systems.HUD
 import org.mackclan.yorg.systems.Render
 
 class GameView : ApplicationListener{
@@ -16,7 +15,6 @@ class GameView : ApplicationListener{
 
     //Systems
     private val render by lazy { Render() }
-    private val hud by lazy { HUD() }
     private val clicks by lazy { Clicks() }
 
     override fun create() {
@@ -31,17 +29,14 @@ class GameView : ApplicationListener{
 
         engine.addSystem(render)
         engine.addSystem(clicks)
-        engine.addSystem(hud)
     }
 
     override fun resize(width: Int, height: Int) {
         render.resize(width, height)
-        hud.resize(width, height)
     }
 
     override fun render() {
         render.update(Gdx.graphics.deltaTime)
-        hud.update(Gdx.graphics.deltaTime)
         clicks.update(Gdx.graphics.deltaTime)
     }
 

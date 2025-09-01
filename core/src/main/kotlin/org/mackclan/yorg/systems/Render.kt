@@ -3,13 +3,18 @@ package org.mackclan.yorg.systems
 import com.badlogic.ashley.core.*
 import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ScreenUtils
+import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.Controlled
 import org.mackclan.yorg.components.Sprite
 import org.mackclan.yorg.components.GameState
+import org.mackclan.yorg.components.UnitInfo
 
 class Render : EntitySystem() {
     private lateinit var entities : ImmutableArray<Entity>
@@ -18,8 +23,12 @@ class Render : EntitySystem() {
 
     private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
+    private val unitInfoMap = ComponentMapper.getFor(UnitInfo::class.java)
     private val batch by lazy { SpriteBatch() }
     private val shapeRenderer by lazy { ShapeRenderer() }
+    private val screenViewport by lazy { ScreenViewport() }
+
+    private val font by lazy { BitmapFont() }
 
 
     override fun addedToEngine(engine: Engine){
@@ -33,11 +42,11 @@ class Render : EntitySystem() {
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f)
         state.viewport.apply()
         batch.projectionMatrix = state.viewport.camera.combined
-        val selectedSprites = Array<Entity>()
         batch.begin()
+        val selectedSprites = Array<Entity>()
         for (entity in entities) {
-            val sprite: Sprite = spriteMap.get(entity)
-            sprite.sprite.draw(batch)
+            val sprite = spriteMap.get(entity).sprite
+            sprite.draw(batch)
             if (controlledMap.has(entity) && controlledMap.get(entity).selected){
                 selectedSprites.add(entity)
             }
@@ -46,10 +55,34 @@ class Render : EntitySystem() {
 
         drawShapes(selectedSprites)
 
+        screenViewport.apply()
+        batch.projectionMatrix = screenViewport.camera.combined
+        batch.begin()
+        for (entity in entities) {
+            val info = unitInfoMap.get(entity)
+            val sprite = spriteMap.get(entity).sprite
+            val health = info.health.toString()
+
+            //Need to convert between coordinate systems
+            val gameWorldPos = Vector3(sprite.x + 0.5f, sprite.y + 1, 0f) // Put text on top and "centered" to be modified in screen coords later
+            val screenPos = Vector3()
+            state.viewport.project(screenPos.set(gameWorldPos))
+
+            // Bump up and center
+            val bounds = GlyphLayout()
+            bounds.setText(font, health)
+            screenPos.y += bounds.height * 1.15f // Need some fudge not sure why
+            screenPos.x -= bounds.width / 2
+
+            font.draw(batch, health, screenPos.x, screenPos.y)
+        }
+        batch.end()
+
     }
 
     fun resize(width: Int, height: Int) {
         state.viewport.update(width, height, true)
+        screenViewport.update(width, height, true)
     }
 
     private fun drawShapes(selectedSprites: Array<Entity>) {
