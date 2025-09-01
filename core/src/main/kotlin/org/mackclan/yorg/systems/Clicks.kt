@@ -4,10 +4,8 @@ import com.badlogic.ashley.core.*
 import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.Vector2
-import org.mackclan.yorg.components.Controlled
-import org.mackclan.yorg.components.GameState
-import org.mackclan.yorg.components.Sprite
-import org.mackclan.yorg.components.UnitInfo
+import org.mackclan.yorg.components.*
+import org.mackclan.yorg.entities.createPopup
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -32,7 +30,7 @@ class Clicks : EntitySystem() {
             touchPos.set(
                 Gdx.input.x.toFloat(),
                 Gdx.input.y.toFloat()
-            ) // This is window coords (in pixels y increases from top down)
+            )
             state.viewport.unproject(touchPos)
             touchPos.set(floor(touchPos.x), floor(touchPos.y))
 
@@ -50,18 +48,21 @@ class Clicks : EntitySystem() {
                     controlled.selected = !controlled.selected
                     state.selected = clickedEntity
                 } else {
-                    //Kotlin idiom: if state.selected not null do this with 'selected' being that value, otherwise just skip
                     state.selected?.let { selected ->
                         val selectedSprite = selected.getComponent(Sprite::class.java).sprite
                         val distance = findSquaredDistance(sprite.x, sprite.y, selectedSprite.x, selectedSprite.y) - 1
                         val selectedInfo = selected.getComponent(UnitInfo::class.java)
                         val damage = (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
-                        if (damage > 0) {
-                            val info = clickedEntity.getComponent(UnitInfo::class.java)
-                            info.health -= damage
-                            if (info.health <= 0) engine.removeEntity(clickedEntity)
+                        val chance = (selectedInfo.range - distance) / selectedInfo.range
+                        val popup = createPopup(damage, chance) { hit ->
+                            if (hit) {
+                                val info = clickedEntity.getComponent(UnitInfo::class.java)
+                                info.health -= damage
+                                if (info.health <= 0) engine.removeEntity(clickedEntity)
+                            }
+                            changeTurns()
                         }
-                        changeTurns()
+                        engine.addEntity(popup)
                     }
                 }
             } else {
@@ -86,9 +87,11 @@ class Clicks : EntitySystem() {
         return abs(x2 - x1) + abs(y2 - y1)
     }
 
-    private fun changeTurns(){
-        controlledMap.get(state.selected).selected = false
-        state.selected = null
+    private fun changeTurns() {
+        state.selected?.let { entity ->
+            controlledMap.get(entity).selected = false
+            state.selected = null
+        }
         state.playerTurn = !state.playerTurn
     }
 }

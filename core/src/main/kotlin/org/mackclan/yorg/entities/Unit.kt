@@ -7,7 +7,7 @@ import org.mackclan.yorg.components.UnitInfo
 
 fun createUnit(xPos : Float, yPos : Float, walkRange: Int, playerControlled: Boolean) : Entity{
     val entity = Entity()
-    entity.add(Sprite(xPos, yPos, 1f, 1f, "graphics/mech.png"))
+    entity.add(Sprite(xPos, yPos, 1f, 1f, if (playerControlled) "graphics/mech.png" else "graphics/mech2.png"))
     entity.add(Controlled(walkRange, playerControlled))
     entity.add(UnitInfo())
     return entity
