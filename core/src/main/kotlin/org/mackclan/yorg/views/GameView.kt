@@ -21,7 +21,11 @@ class GameView : ApplicationListener{
 
     override fun create() {
         engine.addEntity(createUnit(0f,0f, 5, true))
+        engine.addEntity(createUnit(3f,0f, 5, true))
+        engine.addEntity(createUnit(6f,0f, 5, true))
+        engine.addEntity(createUnit(7f,10f, 5, false))
         engine.addEntity(createUnit(10f,10f, 5, false))
+        engine.addEntity(createUnit(13f,10f, 5, false))
         //There should only ever be one; TODO?
         engine.addEntity(createGameState())
 

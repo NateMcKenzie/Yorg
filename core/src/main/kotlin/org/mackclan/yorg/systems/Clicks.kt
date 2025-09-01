@@ -57,7 +57,9 @@ class Clicks : EntitySystem() {
                         val selectedInfo = selected.getComponent(UnitInfo::class.java)
                         val damage = (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
                         if (damage > 0) {
-                            clickedEntity.getComponent(UnitInfo::class.java).health -= damage
+                            val info = clickedEntity.getComponent(UnitInfo::class.java)
+                            info.health -= damage
+                            if (info.health <= 0) engine.removeEntity(clickedEntity)
                         }
                         changeTurns()
                     }

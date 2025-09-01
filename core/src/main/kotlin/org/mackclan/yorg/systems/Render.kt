@@ -73,7 +73,7 @@ class Render : EntitySystem() {
         for (selected in selectedSprites){
             val sprite = spriteMap.get(selected).sprite
             drawHighlight(sprite)
-            val range = controlledMap.get(selected).range
+            val range = controlledMap.get(selected).walkRange
             drawRange(sprite, range)
 
         }
