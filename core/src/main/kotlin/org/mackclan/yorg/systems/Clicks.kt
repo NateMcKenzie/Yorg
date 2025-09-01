@@ -53,10 +53,12 @@ class Clicks : EntitySystem() {
                     //Kotlin idiom: if state.selected not null do this with 'selected' being that value, otherwise just skip
                     state.selected?.let { selected ->
                         val selectedSprite = selected.getComponent(Sprite::class.java).sprite
-                        val distance = findSquaredDistance(sprite.x, selectedSprite.x, sprite.y, selectedSprite.y)
+                        val distance = findSquaredDistance(sprite.x, sprite.y, selectedSprite.x, selectedSprite.y) - 1
                         val selectedInfo = selected.getComponent(UnitInfo::class.java)
-                        val damage = (selectedInfo.damage * (selectedInfo.range / distance)).toInt()
-                        clickedEntity.getComponent(UnitInfo::class.java).health -= damage
+                        val damage = (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
+                        if (damage > 0) {
+                            clickedEntity.getComponent(UnitInfo::class.java).health -= damage
+                        }
                         changeTurns()
                     }
                 }
@@ -73,8 +75,6 @@ class Clicks : EntitySystem() {
                     }
                 }
             }
-            //controlledMap.get(state.selected).selected = false
-            //state.selected = null
         }
     }
 
