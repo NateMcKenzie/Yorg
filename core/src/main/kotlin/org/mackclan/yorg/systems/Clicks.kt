@@ -49,14 +49,14 @@ class Clicks : EntitySystem() {
                     state.selected = clickedEntity
                 } else {
                     state.selected?.let { selected ->
-                        val selectedSprite = selected.getComponent(Sprite::class.java).sprite
+                        val selectedSprite = spriteMap.get(selected).sprite
                         val distance = findSquaredDistance(sprite.x, sprite.y, selectedSprite.x, selectedSprite.y) - 1
-                        val selectedInfo = selected.getComponent(UnitInfo::class.java)
+                        val selectedInfo = unitInfoMap.get(selected)
                         val damage = (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
                         val chance = (selectedInfo.range - distance) / selectedInfo.range
                         val popup = createPopup(damage, chance) { hit ->
                             if (hit) {
-                                val info = clickedEntity.getComponent(UnitInfo::class.java)
+                                val info = unitInfoMap.get(clickedEntity)
                                 info.health -= damage
                                 if (info.health <= 0) engine.removeEntity(clickedEntity)
                             }
