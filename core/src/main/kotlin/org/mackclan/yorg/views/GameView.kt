@@ -29,6 +29,8 @@ class GameView : ApplicationListener{
 
         engine.addEntity(createObstacle(7f,5f))
         engine.addEntity(createObstacle(10f,5f))
+        engine.addEntity(createObstacle(11f,6f))
+        engine.addEntity(createObstacle(12f,7f))
         engine.addEntity(createObstacle(13f,5f))
         //There should only ever be one; TODO?
         engine.addEntity(createGameState())

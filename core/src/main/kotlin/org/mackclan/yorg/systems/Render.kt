@@ -12,13 +12,14 @@ import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.Controlled
-import org.mackclan.yorg.components.Sprite
 import org.mackclan.yorg.components.GameState
+import org.mackclan.yorg.components.Sprite
 import org.mackclan.yorg.components.UnitInfo
 
 class Render : EntitySystem() {
-    private lateinit var entities : ImmutableArray<Entity>
-    private lateinit var movables : ImmutableArray<Entity>
+    private lateinit var entities: ImmutableArray<Entity>
+    private lateinit var movables: ImmutableArray<Entity>
+    private val obstacles by lazy { HashSet<Pair<Float, Float>>() }
     private lateinit var state: GameState
 
     private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
@@ -30,15 +31,22 @@ class Render : EntitySystem() {
 
     private val font by lazy { BitmapFont() }
 
-
-    override fun addedToEngine(engine: Engine){
+    override fun addedToEngine(engine: Engine) {
         entities = engine.getEntitiesFor(Family.all(Sprite::class.java).get())
-        movables = engine.getEntitiesFor(Family.all(Controlled::class.java, Sprite::class.java).get())
+        movables =
+                engine.getEntitiesFor(Family.all(Controlled::class.java, Sprite::class.java).get())
+        engine.getEntitiesFor(Family.all(Sprite::class.java).exclude(Controlled::class.java).get())
+                .forEach { obstacle ->
+                    val sprite = spriteMap.get(obstacle).sprite
+                    obstacles.add(Pair(sprite.x, sprite.y))
+                }
+
+        // TODO: What the hell is this
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }
 
-    override fun update(deltaTime : Float){
+    override fun update(deltaTime: Float) {
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f)
         state.viewport.apply()
         batch.projectionMatrix = state.viewport.camera.combined
@@ -47,7 +55,7 @@ class Render : EntitySystem() {
         for (entity in entities) {
             val sprite = spriteMap.get(entity).sprite
             sprite.draw(batch)
-            if (controlledMap.has(entity) && controlledMap.get(entity).selected){
+            if (controlledMap.has(entity) && controlledMap.get(entity).selected) {
                 selectedSprites.add(entity)
             }
         }
@@ -63,8 +71,13 @@ class Render : EntitySystem() {
             val sprite = spriteMap.get(entity).sprite
             val health = info.health.toString()
 
-            //Need to convert between coordinate systems
-            val gameWorldPos = Vector3(sprite.x + 0.5f, sprite.y + 1, 0f) // Put text on top and "centered" to be modified in screen coords later
+            // Need to convert between coordinate systems
+            val gameWorldPos =
+                    Vector3(
+                            sprite.x + 0.5f,
+                            sprite.y + 1,
+                            0f
+                    ) // Put text on top and "centered" to be modified in screen coords later
             val screenPos = Vector3()
             state.viewport.project(screenPos.set(gameWorldPos))
 
@@ -77,7 +90,6 @@ class Render : EntitySystem() {
             font.draw(batch, health, screenPos.x, screenPos.y)
         }
         batch.end()
-
     }
 
     fun resize(width: Int, height: Int) {
@@ -96,19 +108,18 @@ class Render : EntitySystem() {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
         shapeRenderer.color = Color.DARK_GRAY
 
-        for (x in minX.toInt()..maxX.toInt()){
+        for (x in minX.toInt()..maxX.toInt()) {
             shapeRenderer.line(x.toFloat(), minY, x.toFloat(), maxY)
         }
-        for (y in minY.toInt()..maxY.toInt()){
+        for (y in minY.toInt()..maxY.toInt()) {
             shapeRenderer.line(minX, y.toFloat(), maxX, y.toFloat())
         }
 
-        for (selected in selectedSprites){
+        for (selected in selectedSprites) {
             val sprite = spriteMap.get(selected).sprite
             drawHighlight(sprite)
             val range = controlledMap.get(selected).walkRange
             drawRange(sprite, range)
-
         }
 
         shapeRenderer.end()
@@ -118,83 +129,38 @@ class Render : EntitySystem() {
         var rightX = sprite.x + sprite.width
         var topY = sprite.y + sprite.height
         shapeRenderer.color = Color.YELLOW
-        shapeRenderer.line(rightX, sprite.y, rightX, topY)       // right
-        shapeRenderer.line(sprite.x, sprite.y, sprite.x, topY)   // left
-        shapeRenderer.line(sprite.x, topY, rightX, topY)         // top
+        shapeRenderer.line(rightX, sprite.y, rightX, topY) // right
+        shapeRenderer.line(sprite.x, sprite.y, sprite.x, topY) // left
+        shapeRenderer.line(sprite.x, topY, rightX, topY) // top
         shapeRenderer.line(sprite.x, sprite.y, rightX, sprite.y) // bottom
-
     }
 
-    private fun drawRange(sprite : com.badlogic.gdx.graphics.g2d.Sprite, range : Int){
+    private fun drawRange(sprite: com.badlogic.gdx.graphics.g2d.Sprite, range: Int) {
+        class bfsTile(val x: Float, val y: Float, val distance: Int)
         shapeRenderer.color = Color.BLUE
 
-        // Lines from up -> right
-        var leftX = sprite.x
-        var bottomY = sprite.y + range
-        var rightX = sprite.x + sprite.width
-        var topY = sprite.y + sprite.height + range
-        shapeRenderer.line(leftX, bottomY, leftX, topY)
-        shapeRenderer.line(leftX, topY, rightX, topY)
-        shapeRenderer.line(rightX, bottomY, rightX, topY)
-        for (i in 1 until range){
-            topY -= sprite.height
-            bottomY -= sprite.height
-            rightX += sprite.width
-            leftX += sprite.width
-            shapeRenderer.line(leftX, topY, rightX, topY)
-            shapeRenderer.line(rightX, topY, rightX, bottomY)
-        }
+        val visited = HashSet<Pair<Float, Float>>()
+        val tileQueue = ArrayDeque<bfsTile>()
+        tileQueue.add(bfsTile(sprite.x, sprite.y, 0))
 
-        // Lines from down -> left
-        leftX = sprite.x
-        bottomY = sprite.y - range
-        rightX = sprite.x + sprite.width
-        topY = sprite.y - range + sprite.height
-        shapeRenderer.line(leftX, bottomY, leftX, topY)
-        shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-        shapeRenderer.line(rightX, bottomY, rightX, topY)
-        for (i in 1 until range){
-            topY += sprite.height
-            bottomY += sprite.height
-            rightX -= sprite.width
-            leftX -= sprite.width
-            shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-            shapeRenderer.line(leftX, topY, leftX, bottomY)
+        while (tileQueue.isNotEmpty()) {
+            val current = tileQueue.removeFirst()
+            visited.add(Pair(current.x, current.y))
+            shapeRenderer.rect(current.x, current.y, 1f, 1f)
+            if (current.distance < range) {
+                val candidates =
+                        listOf(
+                                Pair(current.x + 1, current.y),
+                                Pair(current.x - 1, current.y),
+                                Pair(current.x, current.y + 1),
+                                Pair(current.x, current.y - 1)
+                        )
+                candidates.forEach { tile ->
+                    if (!visited.contains(tile) && !obstacles.contains(tile)) {
+                        tileQueue.add(bfsTile(tile.first, tile.second, current.distance + 1))
+                    }
+                }
+            }
         }
-
-        // Lines from left -> up
-        leftX = sprite.x - range
-        bottomY = sprite.y
-        rightX = sprite.x - range + sprite.width
-        topY = sprite.y + sprite.height
-        shapeRenderer.line(leftX, bottomY, leftX, topY)
-        shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-        shapeRenderer.line(leftX, topY, rightX, topY)
-        for (i in 1 until range){
-            topY += sprite.height
-            bottomY += sprite.height
-            rightX += sprite.width
-            leftX += sprite.width
-            shapeRenderer.line(leftX, topY, rightX, topY)
-            shapeRenderer.line(leftX, topY, leftX, bottomY)
-        }
-
-        // Lines from right -> down
-        leftX = sprite.x + range
-        bottomY = sprite.y
-        rightX = sprite.x + range + sprite.width
-        topY = sprite.y + sprite.height
-        shapeRenderer.line(rightX, bottomY, rightX, topY)
-        shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-        shapeRenderer.line(leftX, topY, rightX, topY)
-        for (i in 1 until range){
-            topY -= sprite.height
-            bottomY -= sprite.height
-            rightX -= sprite.width
-            leftX -= sprite.width
-            shapeRenderer.line(leftX, bottomY, rightX, bottomY)
-            shapeRenderer.line(rightX, topY, rightX, bottomY)
-        }
-
     }
 }
