@@ -33,7 +33,7 @@ class Render : EntitySystem() {
 
     override fun addedToEngine(engine: Engine){
         entities = engine.getEntitiesFor(Family.all(Sprite::class.java).get())
-        movables = engine.getEntitiesFor(Family.all(Controlled::class.java).get())
+        movables = engine.getEntitiesFor(Family.all(Controlled::class.java, Sprite::class.java).get())
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }
@@ -58,7 +58,7 @@ class Render : EntitySystem() {
         screenViewport.apply()
         batch.projectionMatrix = screenViewport.camera.combined
         batch.begin()
-        for (entity in entities) {
+        for (entity in movables) {
             val info = unitInfoMap.get(entity)
             val sprite = spriteMap.get(entity).sprite
             val health = info.health.toString()

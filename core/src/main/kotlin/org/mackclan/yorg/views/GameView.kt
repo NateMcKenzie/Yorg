@@ -4,6 +4,7 @@ import com.badlogic.ashley.core.Engine
 import com.badlogic.gdx.ApplicationListener
 import com.badlogic.gdx.Gdx
 import org.mackclan.yorg.entities.createGameState
+import org.mackclan.yorg.entities.createObstacle
 import org.mackclan.yorg.entities.createUnit
 import org.mackclan.yorg.systems.Clicks
 import org.mackclan.yorg.systems.HUD
@@ -25,6 +26,10 @@ class GameView : ApplicationListener{
         engine.addEntity(createUnit(7f,10f, 5, false))
         engine.addEntity(createUnit(10f,10f, 5, false))
         engine.addEntity(createUnit(13f,10f, 5, false))
+
+        engine.addEntity(createObstacle(7f,5f))
+        engine.addEntity(createObstacle(10f,5f))
+        engine.addEntity(createObstacle(13f,5f))
         //There should only ever be one; TODO?
         engine.addEntity(createGameState())
 
