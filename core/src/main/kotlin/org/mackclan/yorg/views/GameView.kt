@@ -19,19 +19,20 @@ class GameView : ApplicationListener{
     private val hud by lazy { HUD() }
 
     override fun create() {
-        engine.addEntity(createUnit(0f,0f, 5, true))
-        engine.addEntity(createUnit(3f,0f, 5, true))
-        engine.addEntity(createUnit(6f,0f, 5, true))
+        engine.addEntity(createUnit(10f,8f, 5, true))
+        engine.addEntity(createUnit(12f,9f, 5, true))
+        engine.addEntity(createUnit(14f,7f, 5, true))
 
-        engine.addEntity(createUnit(7f,10f, 5, false))
-        engine.addEntity(createUnit(10f,10f, 5, false))
-        engine.addEntity(createUnit(13f,10f, 5, false))
+        engine.addEntity(createUnit(7f,14f, 5, false))
+        engine.addEntity(createUnit(10f,14f, 5, false))
+        engine.addEntity(createUnit(13f,14f, 5, false))
 
-        engine.addEntity(createObstacle(7f,5f))
-        engine.addEntity(createObstacle(10f,5f))
-        engine.addEntity(createObstacle(11f,6f))
-        engine.addEntity(createObstacle(12f,7f))
-        engine.addEntity(createObstacle(13f,5f))
+        engine.addEntity(createObstacle(9f,8f))
+        engine.addEntity(createObstacle(10f,9f))
+        engine.addEntity(createObstacle(11f,10f))
+        engine.addEntity(createObstacle(12f,10f))
+        engine.addEntity(createObstacle(13f,9f))
+        engine.addEntity(createObstacle(14f,8f))
         //There should only ever be one; TODO?
         engine.addEntity(createGameState())
 

@@ -4,10 +4,10 @@ import com.badlogic.ashley.core.*
 import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.Vector2
-import org.mackclan.yorg.components.*
-import org.mackclan.yorg.entities.createPopup
 import kotlin.math.abs
 import kotlin.math.floor
+import org.mackclan.yorg.components.*
+import org.mackclan.yorg.entities.createPopup
 
 class Clicks : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
@@ -16,10 +16,22 @@ class Clicks : EntitySystem() {
     private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
     private val unitInfoMap = ComponentMapper.getFor(UnitInfo::class.java)
 
+    // TODO: There's a fair bit of overlap between work here and in Render, might make sense to
+    // combine movement into a system
+    private val obstacles by lazy { HashSet<Pair<Int, Int>>() }
+
     private lateinit var state: GameState
 
     override fun addedToEngine(engine: Engine) {
-        entities = engine.getEntitiesFor(Family.all(Sprite::class.java, Controlled::class.java).get())
+        entities =
+                engine.getEntitiesFor(Family.all(Sprite::class.java, Controlled::class.java).get())
+
+        engine.getEntitiesFor(Family.all(Sprite::class.java).exclude(Controlled::class.java).get())
+                .forEach { obstacle ->
+                    val sprite = spriteMap.get(obstacle).sprite
+                    obstacles.add(Pair(sprite.x.toInt(), sprite.y.toInt()))
+                }
+
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }
@@ -27,10 +39,7 @@ class Clicks : EntitySystem() {
     override fun update(deltaTime: Float) {
         if (Gdx.input.justTouched()) {
             val touchPos = Vector2()
-            touchPos.set(
-                Gdx.input.x.toFloat(),
-                Gdx.input.y.toFloat()
-            )
+            touchPos.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat())
             state.viewport.unproject(touchPos)
             touchPos.set(floor(touchPos.x), floor(touchPos.y))
 
@@ -50,25 +59,38 @@ class Clicks : EntitySystem() {
                 } else {
                     state.selected?.let { selected ->
                         val selectedSprite = spriteMap.get(selected).sprite
-                        val distance = findSquaredDistance(sprite.x, sprite.y, selectedSprite.x, selectedSprite.y) - 1
+                        val distance =
+                                findSquaredDistance(
+                                        sprite.x,
+                                        sprite.y,
+                                        selectedSprite.x,
+                                        selectedSprite.y
+                                ) - 1
                         val selectedInfo = unitInfoMap.get(selected)
                         val damage = (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
                         val chance = (selectedInfo.range - distance) / selectedInfo.range
-                        val popup = createPopup(damage, chance) { hit ->
-                            if (hit) {
-                                val info = unitInfoMap.get(clickedEntity)
-                                info.health -= damage
-                                if (info.health <= 0) engine.removeEntity(clickedEntity)
-                            }
-                            changeTurns()
-                        }
+                        val popup =
+                                createPopup(damage, chance) { hit ->
+                                    if (hit) {
+                                        val info = unitInfoMap.get(clickedEntity)
+                                        info.health -= damage
+                                        if (info.health <= 0) engine.removeEntity(clickedEntity)
+                                    }
+                                    changeTurns()
+                                }
                         engine.addEntity(popup)
                     }
                 }
             } else {
                 state.selected?.let { selected ->
                     val selectedSprite = spriteMap.get(selected).sprite
-                    val distance = findSquaredDistance(selectedSprite.x, selectedSprite.y, touchPos.x, touchPos.y)
+                    val distance =
+                            findWalkDistance(
+                                    selectedSprite.x.toInt(),
+                                    selectedSprite.y.toInt(),
+                                    touchPos.x.toInt(),
+                                    touchPos.y.toInt()
+                            )
                     // Move selected
                     if (distance <= 5) {
                         selectedSprite.x = touchPos.x
@@ -82,9 +104,38 @@ class Clicks : EntitySystem() {
     }
 
     private fun findSquaredDistance(x1: Float, y1: Float, x2: Float, y2: Float): Float {
-        // TODO: Does not account for obstacles, probably use BFS in future
-        // In fact, the drawing won't work either. Distance might be its own whole system that does logic and rendering
         return abs(x2 - x1) + abs(y2 - y1)
+    }
+
+    private fun findWalkDistance(x1: Int, y1: Int, x2: Int, y2: Int): Int {
+        class bfsTile(val x: Int, val y: Int, val distance: Int)
+
+        val listed = HashSet<Int>()
+        val tileQueue = ArrayDeque<bfsTile>()
+        tileQueue.add(bfsTile(x1, y1, 0))
+        listed.add((x1 + y1 * state.viewport.worldWidth).toInt())
+
+        while (tileQueue.isNotEmpty()) {
+            val current = tileQueue.removeFirst()
+            val candidates =
+                    listOf(
+                            Pair(current.x + 1, current.y),
+                            Pair(current.x - 1, current.y),
+                            Pair(current.x, current.y + 1),
+                            Pair(current.x, current.y - 1)
+                    )
+            for (tile in candidates) {
+                if (tile.first < 0 || tile.second < 0) break
+                if (tile.first == x2 && tile.second == y2) return current.distance + 1
+
+                val id = (tile.first + tile.second * state.viewport.worldWidth.toInt())
+                if (!listed.contains(id) && !obstacles.contains(tile)) {
+                    tileQueue.add(bfsTile(tile.first, tile.second, current.distance + 1))
+                    listed.add(id)
+                }
+            }
+        }
+        return Int.MAX_VALUE
     }
 
     private fun changeTurns() {

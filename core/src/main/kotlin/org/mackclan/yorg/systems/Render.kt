@@ -2,7 +2,9 @@ package org.mackclan.yorg.systems
 
 import com.badlogic.ashley.core.*
 import com.badlogic.ashley.utils.ImmutableArray
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
@@ -19,7 +21,7 @@ import org.mackclan.yorg.components.UnitInfo
 class Render : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
     private lateinit var movables: ImmutableArray<Entity>
-    private val obstacles by lazy { HashSet<Pair<Float, Float>>() }
+    private val obstacles by lazy { HashSet<Pair<Int, Int>>() }
     private lateinit var state: GameState
 
     private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
@@ -33,15 +35,12 @@ class Render : EntitySystem() {
 
     override fun addedToEngine(engine: Engine) {
         entities = engine.getEntitiesFor(Family.all(Sprite::class.java).get())
-        movables =
-                engine.getEntitiesFor(Family.all(Controlled::class.java, Sprite::class.java).get())
+        movables = engine.getEntitiesFor(Family.all(Controlled::class.java, Sprite::class.java).get())
         engine.getEntitiesFor(Family.all(Sprite::class.java).exclude(Controlled::class.java).get())
                 .forEach { obstacle ->
                     val sprite = spriteMap.get(obstacle).sprite
-                    obstacles.add(Pair(sprite.x, sprite.y))
+                    obstacles.add(Pair(sprite.x.toInt(), sprite.y.toInt()))
                 }
-
-        // TODO: What the hell is this
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }
@@ -115,13 +114,19 @@ class Render : EntitySystem() {
             shapeRenderer.line(minX, y.toFloat(), maxX, y.toFloat())
         }
 
+        // TODO: There's only one though right? Might be better off using gamestate selected for
+        // this?
         for (selected in selectedSprites) {
             val sprite = spriteMap.get(selected).sprite
             drawHighlight(sprite)
+        }
+        shapeRenderer.end()
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        for (selected in selectedSprites) {
+            val sprite = spriteMap.get(selected).sprite
             val range = controlledMap.get(selected).walkRange
             drawRange(sprite, range)
         }
-
         shapeRenderer.end()
     }
 
@@ -136,17 +141,19 @@ class Render : EntitySystem() {
     }
 
     private fun drawRange(sprite: com.badlogic.gdx.graphics.g2d.Sprite, range: Int) {
-        class bfsTile(val x: Float, val y: Float, val distance: Int)
-        shapeRenderer.color = Color.BLUE
+        class bfsTile(val x: Int, val y: Int, val distance: Int)
+        shapeRenderer.color = Color(0f, 0f, 0.3f, 0.2f)
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
 
-        val visited = HashSet<Pair<Float, Float>>()
+        val listed = HashSet<Int>()
         val tileQueue = ArrayDeque<bfsTile>()
-        tileQueue.add(bfsTile(sprite.x, sprite.y, 0))
+        tileQueue.add(bfsTile(sprite.x.toInt(), sprite.y.toInt(), 0))
+        listed.add((sprite.x + sprite.y * state.viewport.worldWidth).toInt())
 
         while (tileQueue.isNotEmpty()) {
             val current = tileQueue.removeFirst()
-            visited.add(Pair(current.x, current.y))
-            shapeRenderer.rect(current.x, current.y, 1f, 1f)
+            shapeRenderer.rect(current.x.toFloat(), current.y.toFloat(), 1f, 1f)
             if (current.distance < range) {
                 val candidates =
                         listOf(
@@ -155,9 +162,12 @@ class Render : EntitySystem() {
                                 Pair(current.x, current.y + 1),
                                 Pair(current.x, current.y - 1)
                         )
-                candidates.forEach { tile ->
-                    if (!visited.contains(tile) && !obstacles.contains(tile)) {
+                for (tile in candidates){
+                    if (tile.first < 0 || tile.second < 0) break
+                    val id = (tile.first + tile.second * state.viewport.worldWidth.toInt())
+                    if (!listed.contains(id) && !obstacles.contains(tile)) {
                         tileQueue.add(bfsTile(tile.first, tile.second, current.distance + 1))
+                        listed.add(id)
                     }
                 }
             }
