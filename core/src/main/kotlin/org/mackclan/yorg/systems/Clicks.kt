@@ -16,21 +16,10 @@ class Clicks : EntitySystem() {
     private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
     private val unitInfoMap = ComponentMapper.getFor(UnitInfo::class.java)
 
-    // TODO: There's a fair bit of overlap between work here and in Render, might make sense to
-    // combine movement into a system
-    private val obstacles by lazy { HashSet<Pair<Int, Int>>() }
-
     private lateinit var state: GameState
 
     override fun addedToEngine(engine: Engine) {
-        entities =
-                engine.getEntitiesFor(Family.all(Sprite::class.java, Controlled::class.java).get())
-
-        engine.getEntitiesFor(Family.all(Sprite::class.java).exclude(Controlled::class.java).get())
-                .forEach { obstacle ->
-                    val sprite = spriteMap.get(obstacle).sprite
-                    obstacles.add(Pair(sprite.x.toInt(), sprite.y.toInt()))
-                }
+        entities = engine.getEntitiesFor(Family.all(Sprite::class.java, Controlled::class.java).get())
 
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
@@ -86,32 +75,8 @@ class Clicks : EntitySystem() {
             } else {
                 // Move
                 state.selected?.let { selected ->
-                    val selectedSprite = spriteMap.get(selected).sprite
-                    val distance =
-                            findWalkDistance(
-                                    selectedSprite.x.toInt(),
-                                    selectedSprite.y.toInt(),
-                                    touchPos.x.toInt(),
-                                    touchPos.y.toInt()
-                            )
-                    if (distance <= 5) {
-                        selectedSprite.x = touchPos.x
-                        selectedSprite.y = touchPos.y
-
-                        // Recompute cover, TODO: should probably have a more robust way of handling this later
-                        val selectedControlled = controlledMap.get(selected)
-                        selectedControlled.coverUp    = if(obstacles.contains(Pair<Int,Int>(touchPos.x.toInt(), touchPos.y.toInt() + 1))){CoverLevel.Low} else {CoverLevel.None}
-                        selectedControlled.coverRight = if(obstacles.contains(Pair<Int,Int>(touchPos.x.toInt() + 1, touchPos.y.toInt()))){CoverLevel.Low} else {CoverLevel.None}
-                        selectedControlled.coverDown  = if(obstacles.contains(Pair<Int,Int>(touchPos.x.toInt(), touchPos.y.toInt() - 1))){CoverLevel.Low} else {CoverLevel.None}
-                        selectedControlled.coverLeft  = if(obstacles.contains(Pair<Int,Int>(touchPos.x.toInt() - 1, touchPos.y.toInt()))){CoverLevel.Low} else {CoverLevel.None}
-
-                        println(selectedControlled.coverUp    )
-                        println(selectedControlled.coverRight )
-                        println(selectedControlled.coverDown  )
-                        println(selectedControlled.coverLeft  )
-
-                        changeTurns()
-                    }
+                    val selectedControlled = controlledMap.get(selected)
+                    selectedControlled.desiredMove = touchPos
                 }
             }
         }
@@ -121,36 +86,6 @@ class Clicks : EntitySystem() {
         return abs(x2 - x1) + abs(y2 - y1)
     }
 
-    private fun findWalkDistance(x1: Int, y1: Int, x2: Int, y2: Int): Int {
-        class bfsTile(val x: Int, val y: Int, val distance: Int)
-
-        val listed = HashSet<Int>()
-        val tileQueue = ArrayDeque<bfsTile>()
-        tileQueue.add(bfsTile(x1, y1, 0))
-        listed.add((x1 + y1 * state.viewport.worldWidth).toInt())
-
-        while (tileQueue.isNotEmpty()) {
-            val current = tileQueue.removeFirst()
-            val candidates =
-                    listOf(
-                            Pair(current.x + 1, current.y),
-                            Pair(current.x - 1, current.y),
-                            Pair(current.x, current.y + 1),
-                            Pair(current.x, current.y - 1)
-                    )
-            for (tile in candidates) {
-                if (tile.first < 0 || tile.second < 0) break
-                if (tile.first == x2 && tile.second == y2) return current.distance + 1
-
-                val id = (tile.first + tile.second * state.viewport.worldWidth.toInt())
-                if (!listed.contains(id) && !obstacles.contains(tile)) {
-                    tileQueue.add(bfsTile(tile.first, tile.second, current.distance + 1))
-                    listed.add(id)
-                }
-            }
-        }
-        return Int.MAX_VALUE
-    }
 
     private fun changeTurns() {
         state.selected?.let { entity ->
