@@ -54,9 +54,11 @@ class Clicks : EntitySystem() {
                 val controlled = controlledMap.get(clickedEntity)
                 val sprite = spriteMap.get(clickedEntity).sprite
                 if (state.playerTurn == controlled.playerControlled) {
+                    // Deselect
                     controlled.selected = !controlled.selected
                     state.selected = clickedEntity
                 } else {
+                    // Open shoot popup
                     state.selected?.let { selected ->
                         val selectedSprite = spriteMap.get(selected).sprite
                         val distance =
@@ -82,6 +84,7 @@ class Clicks : EntitySystem() {
                     }
                 }
             } else {
+                // Move
                 state.selected?.let { selected ->
                     val selectedSprite = spriteMap.get(selected).sprite
                     val distance =
@@ -91,10 +94,21 @@ class Clicks : EntitySystem() {
                                     touchPos.x.toInt(),
                                     touchPos.y.toInt()
                             )
-                    // Move selected
                     if (distance <= 5) {
                         selectedSprite.x = touchPos.x
                         selectedSprite.y = touchPos.y
+
+                        // Recompute cover, TODO: should probably have a more robust way of handling this later
+                        val selectedControlled = controlledMap.get(selected)
+                        selectedControlled.coverUp    = if(obstacles.contains(Pair<Int,Int>(touchPos.x.toInt(), touchPos.y.toInt() + 1))){CoverLevel.Low} else {CoverLevel.None}
+                        selectedControlled.coverRight = if(obstacles.contains(Pair<Int,Int>(touchPos.x.toInt() + 1, touchPos.y.toInt()))){CoverLevel.Low} else {CoverLevel.None}
+                        selectedControlled.coverDown  = if(obstacles.contains(Pair<Int,Int>(touchPos.x.toInt(), touchPos.y.toInt() - 1))){CoverLevel.Low} else {CoverLevel.None}
+                        selectedControlled.coverLeft  = if(obstacles.contains(Pair<Int,Int>(touchPos.x.toInt() - 1, touchPos.y.toInt()))){CoverLevel.Low} else {CoverLevel.None}
+
+                        println(selectedControlled.coverUp    )
+                        println(selectedControlled.coverRight )
+                        println(selectedControlled.coverDown  )
+                        println(selectedControlled.coverLeft  )
 
                         changeTurns()
                     }
