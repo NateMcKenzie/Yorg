@@ -13,7 +13,7 @@ import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.Controlled
 import org.mackclan.yorg.components.GameState
-import org.mackclan.yorg.components.Sprite
+import org.mackclan.yorg.components.SpriteComponent
 import org.mackclan.yorg.components.UnitInfo
 
 class Render : EntitySystem() {
@@ -21,7 +21,7 @@ class Render : EntitySystem() {
     private lateinit var movables: ImmutableArray<Entity>
     private lateinit var state: GameState
 
-    private val spriteMap = ComponentMapper.getFor(Sprite::class.java)
+    private val spriteComponentMap = ComponentMapper.getFor(SpriteComponent::class.java)
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val unitInfoMap = ComponentMapper.getFor(UnitInfo::class.java)
     private val batch by lazy { SpriteBatch() }
@@ -31,8 +31,8 @@ class Render : EntitySystem() {
     private val font by lazy { BitmapFont() }
 
     override fun addedToEngine(engine: Engine) {
-        entities = engine.getEntitiesFor(Family.all(Sprite::class.java).get())
-        movables = engine.getEntitiesFor(Family.all(Controlled::class.java, Sprite::class.java).get())
+        entities = engine.getEntitiesFor(Family.all(SpriteComponent::class.java).get())
+        movables = engine.getEntitiesFor(Family.all(Controlled::class.java, SpriteComponent::class.java).get())
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }
@@ -44,7 +44,7 @@ class Render : EntitySystem() {
         batch.begin()
         val selectedSprites = Array<Entity>()
         for (entity in entities) {
-            val sprite = spriteMap.get(entity).sprite
+            val sprite = spriteComponentMap.get(entity).sprite
             sprite.draw(batch)
             if (controlledMap.has(entity) && controlledMap.get(entity).selected) {
                 selectedSprites.add(entity)
@@ -59,16 +59,16 @@ class Render : EntitySystem() {
         batch.begin()
         for (entity in movables) {
             val info = unitInfoMap.get(entity)
-            val sprite = spriteMap.get(entity).sprite
+            val sprite = spriteComponentMap.get(entity).sprite
             val health = info.health.toString()
 
             // Need to convert between coordinate systems
             val gameWorldPos =
-                    Vector3(
-                            sprite.x + 0.5f,
-                            sprite.y + 1,
-                            0f
-                    ) // Put text on top and "centered" to be modified in screen coords later
+                Vector3(
+                    sprite.x + 0.5f,
+                    sprite.y + 1,
+                    0f
+                ) // Put text on top and "centered" to be modified in screen coords later
             val screenPos = Vector3()
             state.viewport.project(screenPos.set(gameWorldPos))
 
@@ -109,7 +109,7 @@ class Render : EntitySystem() {
         // TODO: There's only one though right? Might be better off using gamestate selected for
         // this?
         for (selected in selectedSprites) {
-            val sprite = spriteMap.get(selected).sprite
+            val sprite = spriteComponentMap.get(selected).sprite
             drawHighlight(sprite)
         }
         shapeRenderer.end()

@@ -9,8 +9,8 @@ import org.mackclan.yorg.entities.createObstacle
 import org.mackclan.yorg.entities.createUnit
 import org.mackclan.yorg.systems.Clicks
 import org.mackclan.yorg.systems.HUD
-import org.mackclan.yorg.systems.Render
 import org.mackclan.yorg.systems.Movement
+import org.mackclan.yorg.systems.Render
 
 class GameView : ApplicationListener {
     private val engine by lazy { Engine() }
@@ -32,8 +32,8 @@ class GameView : ApplicationListener {
 
         engine.addEntity(createObstacle(9f, 8f, CoverLevel.Low))
         engine.addEntity(createObstacle(10f, 9f, CoverLevel.Low))
-        engine.addEntity(createObstacle(11f, 10f, CoverLevel.Low))
-        engine.addEntity(createObstacle(12f, 10f, CoverLevel.Low))
+        engine.addEntity(createObstacle(11f, 10f, CoverLevel.High))
+        engine.addEntity(createObstacle(12f, 10f, CoverLevel.High))
         engine.addEntity(createObstacle(13f, 9f, CoverLevel.Low))
         engine.addEntity(createObstacle(14f, 8f, CoverLevel.Low))
         // There should only ever be one; TODO?

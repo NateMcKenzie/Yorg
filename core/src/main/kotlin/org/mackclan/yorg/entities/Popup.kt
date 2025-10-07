@@ -5,7 +5,7 @@ import org.mackclan.yorg.components.BoolCallback
 import org.mackclan.yorg.components.FreshFlag
 import org.mackclan.yorg.components.ShotInfo
 
-fun createPopup(damage : Int, chance : Float, callback: (Boolean) -> Unit) : Entity{
+fun createPopup(damage: Int, chance: Float, callback: (Boolean) -> Unit): Entity {
     val popup = Entity()
     popup.add(FreshFlag())
     popup.add(ShotInfo(chance, damage))
