@@ -61,11 +61,16 @@ class Movement : EntitySystem() {
                         moveLocation.x.toInt(),
                         moveLocation.y.toInt(),
                     )
-                if (distance <= 5) {
+                if (distance <= selectedControlled.walkRange && selectedControlled.actionPoints > 0) {
                     selectedSprite.x = moveLocation.x
                     selectedSprite.y = moveLocation.y
 
                     selectedControlled.desiredMove = null
+                    selectedControlled.actionPoints -= 1
+                }
+                //TODO: Implement two action point moves
+
+                if (selectedControlled.actionPoints <= 0) {
                     changeTurns()
                 }
             }
@@ -151,6 +156,7 @@ class Movement : EntitySystem() {
     private fun changeTurns() {
         state.selected?.let { entity ->
             val controlled = controlledMap.get(entity)
+            controlled.actionPoints = 2
             controlled.selected = false
             state.selected = null
         }

@@ -5,10 +5,10 @@ import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.math.Vector2
-import org.mackclan.yorg.components.*
-import org.mackclan.yorg.entities.createPopup
 import kotlin.math.abs
 import kotlin.math.floor
+import org.mackclan.yorg.components.*
+import org.mackclan.yorg.entities.createPopup
 
 class Clicks : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
@@ -22,8 +22,14 @@ class Clicks : EntitySystem() {
     private lateinit var state: GameState
 
     override fun addedToEngine(engine: Engine) {
-        entities = engine.getEntitiesFor(Family.all(SpriteComponent::class.java, Controlled::class.java).get())
-        obstacles = engine.getEntitiesFor(Family.all(SpriteComponent::class.java, Cover::class.java).get())
+        entities =
+                engine.getEntitiesFor(
+                        Family.all(SpriteComponent::class.java, Controlled::class.java).get()
+                )
+        obstacles =
+                engine.getEntitiesFor(
+                        Family.all(SpriteComponent::class.java, Cover::class.java).get()
+                )
 
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
@@ -56,23 +62,29 @@ class Clicks : EntitySystem() {
                         val selectedSprite = spriteComponentMap.get(selected).sprite
                         val selectedInfo = unitInfoMap.get(selected)
                         val distance =
-                            findSquaredDistance(
-                                sprite.x,
-                                sprite.y,
-                                selectedSprite.x,
-                                selectedSprite.y
-                            ) - 1
-                        val chance = calculateChance(selectedSprite, sprite, distance, selectedInfo.range)
+                                findSquaredDistance(
+                                        sprite.x,
+                                        sprite.y,
+                                        selectedSprite.x,
+                                        selectedSprite.y
+                                ) - 1
+                        val chance =
+                                calculateChance(
+                                        selectedSprite,
+                                        sprite,
+                                        distance,
+                                        selectedInfo.range
+                                )
                         val damage = (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
                         val popup =
-                            createPopup(damage, chance) { hit ->
-                                if (hit) {
-                                    val info = unitInfoMap.get(clickedEntity)
-                                    info.health -= damage
-                                    if (info.health <= 0) engine.removeEntity(clickedEntity)
+                                createPopup(damage, chance) { hit ->
+                                    if (hit) {
+                                        val info = unitInfoMap.get(clickedEntity)
+                                        info.health -= damage
+                                        if (info.health <= 0) engine.removeEntity(clickedEntity)
+                                    }
+                                    changeTurns()
                                 }
-                                changeTurns()
-                            }
                         engine.addEntity(popup)
                     }
                 }
@@ -86,7 +98,12 @@ class Clicks : EntitySystem() {
         }
     }
 
-    private fun calculateChance(sourceSprite: Sprite, targetSprite: Sprite, distance: Float, range: Int): Float {
+    private fun calculateChance(
+            sourceSprite: Sprite,
+            targetSprite: Sprite,
+            distance: Float,
+            range: Int
+    ): Float {
         val baseChance = (range - distance) / range
 
         // Factor in cover. TODO: Currently very simplistic
@@ -117,10 +134,11 @@ class Clicks : EntitySystem() {
         return abs(x2 - x1) + abs(y2 - y1)
     }
 
-
     private fun changeTurns() {
         state.selected?.let { entity ->
-            controlledMap.get(entity).selected = false
+            val controlled = controlledMap.get(entity)
+            controlled.actionPoints = 2
+            controlled.selected = false
             state.selected = null
         }
         state.playerTurn = !state.playerTurn
