@@ -13,6 +13,7 @@ import org.mackclan.yorg.components.Controlled
 import org.mackclan.yorg.components.Cover
 import org.mackclan.yorg.components.GameState
 import org.mackclan.yorg.components.SpriteComponent
+import org.mackclan.yorg.systems.Turn
 
 class Movement : EntitySystem() {
     private lateinit var movables: ImmutableArray<Entity>
@@ -67,12 +68,9 @@ class Movement : EntitySystem() {
 
                     selectedControlled.desiredMove = null
                     selectedControlled.actionPoints -= 1
+                    if (selectedControlled.actionPoints <= 0) spendUnit(selectedControlled, state)
                 }
                 //TODO: Implement two action point moves
-
-                if (selectedControlled.actionPoints <= 0) {
-                    changeTurns()
-                }
             }
         }
     }
@@ -151,16 +149,6 @@ class Movement : EntitySystem() {
             }
         }
         return Int.MAX_VALUE
-    }
-
-    private fun changeTurns() {
-        state.selected?.let { entity ->
-            val controlled = controlledMap.get(entity)
-            controlled.actionPoints = 2
-            controlled.selected = false
-            state.selected = null
-        }
-        state.playerTurn = !state.playerTurn
     }
 
     fun resize(width: Int, height: Int) {

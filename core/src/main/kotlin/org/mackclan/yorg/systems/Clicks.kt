@@ -9,6 +9,7 @@ import kotlin.math.abs
 import kotlin.math.floor
 import org.mackclan.yorg.components.*
 import org.mackclan.yorg.entities.createPopup
+import org.mackclan.yorg.systems.Turn
 
 class Clicks : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
@@ -53,39 +54,45 @@ class Clicks : EntitySystem() {
                 val controlled = controlledMap.get(clickedEntity)
                 val sprite = spriteComponentMap.get(clickedEntity).sprite
                 if (state.playerTurn == controlled.playerControlled) {
-                    // Deselect
-                    controlled.selected = !controlled.selected
-                    state.selected = clickedEntity
+                    // Toggle select of clicked unit
+                    if(controlled.actionPoints > 0){
+                        controlled.selected = !controlled.selected
+                        state.selected = clickedEntity
+                    }
                 } else {
                     // Open shoot popup
                     state.selected?.let { selected ->
                         val selectedSprite = spriteComponentMap.get(selected).sprite
                         val selectedInfo = unitInfoMap.get(selected)
-                        val distance =
-                                findSquaredDistance(
-                                        sprite.x,
-                                        sprite.y,
-                                        selectedSprite.x,
-                                        selectedSprite.y
-                                ) - 1
-                        val chance =
-                                calculateChance(
-                                        selectedSprite,
-                                        sprite,
-                                        distance,
-                                        selectedInfo.range
-                                )
-                        val damage = (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
-                        val popup =
-                                createPopup(damage, chance) { hit ->
-                                    if (hit) {
-                                        val info = unitInfoMap.get(clickedEntity)
-                                        info.health -= damage
-                                        if (info.health <= 0) engine.removeEntity(clickedEntity)
+                        val selectedControlled = controlledMap.get(selected)
+                        if (selectedControlled.actionPoints > 0) {
+                            val distance =
+                                    findSquaredDistance(
+                                            sprite.x,
+                                            sprite.y,
+                                            selectedSprite.x,
+                                            selectedSprite.y
+                                    ) - 1
+                            val chance =
+                                    calculateChance(
+                                            selectedSprite,
+                                            sprite,
+                                            distance,
+                                            selectedInfo.range
+                                    )
+                            val damage =
+                                    (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
+                            val popup =
+                                    createPopup(damage, chance) { hit ->
+                                        if (hit) {
+                                            val info = unitInfoMap.get(clickedEntity)
+                                            info.health -= damage
+                                            if (info.health <= 0) engine.removeEntity(clickedEntity)
+                                        }
+                                        spendUnit(selectedControlled, state)
                                     }
-                                    changeTurns()
-                                }
-                        engine.addEntity(popup)
+                            engine.addEntity(popup)
+                        }
                     }
                 }
             } else {
@@ -132,15 +139,5 @@ class Clicks : EntitySystem() {
 
     private fun findSquaredDistance(x1: Float, y1: Float, x2: Float, y2: Float): Float {
         return abs(x2 - x1) + abs(y2 - y1)
-    }
-
-    private fun changeTurns() {
-        state.selected?.let { entity ->
-            val controlled = controlledMap.get(entity)
-            controlled.actionPoints = 2
-            controlled.selected = false
-            state.selected = null
-        }
-        state.playerTurn = !state.playerTurn
     }
 }
