@@ -8,7 +8,7 @@ import org.mackclan.yorg.components.SpriteComponent
 fun createObstacle(xPos: Float, yPos: Float, coverLevel: CoverLevel): Entity {
     val entity = Entity()
     val image = if (coverLevel == CoverLevel.Low) "graphics/block.png" else "graphics/block_high.png"
-    entity.add(SpriteComponent(xPos, yPos, 1f, 1f, image))
+    entity.add(SpriteComponent(xPos, yPos, image))
     entity.add(Cover(coverLevel))
     return entity
 }

@@ -12,6 +12,7 @@ import org.mackclan.yorg.systems.HUD
 import org.mackclan.yorg.systems.Movement
 import org.mackclan.yorg.systems.Render
 import org.mackclan.yorg.systems.Turn
+import org.mackclan.yorg.systems.Animation
 
 class GameView : ApplicationListener {
     private val engine by lazy { Engine() }
@@ -22,6 +23,7 @@ class GameView : ApplicationListener {
     private val clicks by lazy { Clicks() }
     private val hud by lazy { HUD() }
     private val turn by lazy { Turn() }
+    private val animation by lazy { Animation() }
 
     override fun create() {
         engine.addEntity(createUnit(10f, 8f, 5, true))
@@ -46,12 +48,14 @@ class GameView : ApplicationListener {
         engine.addSystem(clicks)
         engine.addSystem(hud)
         engine.addSystem(turn)
+        engine.addSystem(animation)
     }
 
     override fun resize(width: Int, height: Int) {
         render.resize(width, height)
         movement.resize(width, height)
         hud.resize(width, height)
+        animation.resize(width, height)
     }
 
     override fun render() {
@@ -60,6 +64,7 @@ class GameView : ApplicationListener {
         movement.update(Gdx.graphics.deltaTime)
         hud.update(Gdx.graphics.deltaTime)
         turn.update(Gdx.graphics.deltaTime)
+        animation.update(Gdx.graphics.deltaTime)
     }
 
     override fun pause() {

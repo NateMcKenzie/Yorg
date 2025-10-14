@@ -11,7 +11,7 @@ buildscript {
   dependencies {
     classpath 'com.android.tools.build:gradle:8.11.0'
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-
+    classpath "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
   }
 }
 
@@ -75,4 +75,11 @@ subprojects {
   }
 }
 
-eclipse.project.name = 'Yorg' + '-parent'
+import com.badlogic.gdx.tools.texturepacker.TexturePacker
+
+task texturePacker {
+  doLast {
+    logger.info "Calling TexturePacker"
+    TexturePacker.process("assets/raw/robot1/01_Idle", "assets/animations/robot1/01_Idle", "idle")
+  }
+}
