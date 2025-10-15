@@ -7,5 +7,6 @@ class AnimatablePosition(posX : Float, posY : Float) : Component {
     var velocity : Vector2 = Vector2()
     var target : Vector2 = Vector2()
     var position : Vector2 = Vector2(posX, posY)
+    var speed : Float = 5f
 }
 

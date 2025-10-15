@@ -5,17 +5,15 @@ import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.badlogic.gdx.math.Vector2
+import org.mackclan.yorg.components.AnimatablePosition
 import org.mackclan.yorg.components.Controlled
 import org.mackclan.yorg.components.Cover
 import org.mackclan.yorg.components.GameState
 import org.mackclan.yorg.components.SpriteComponent
-import org.mackclan.yorg.components.AnimatablePosition
-import org.mackclan.yorg.systems.Turn
 
 class Movement : EntitySystem() {
     private lateinit var movables: ImmutableArray<Entity>
@@ -30,12 +28,13 @@ class Movement : EntitySystem() {
 
     override fun addedToEngine(engine: Engine) {
         movables =
-            engine.getEntitiesFor(Family.all(Controlled::class.java, AnimatablePosition::class.java).get())
-        engine.getEntitiesFor(Family.all(Cover::class.java).get())
-            .forEach { obstacle ->
-                val sprite = spriteMap.get(obstacle).sprite
-                obstacles.add(Pair(sprite.x.toInt(), sprite.y.toInt()))
-            }
+                engine.getEntitiesFor(
+                        Family.all(Controlled::class.java, AnimatablePosition::class.java).get()
+                )
+        engine.getEntitiesFor(Family.all(Cover::class.java).get()).forEach { obstacle ->
+            val sprite = spriteMap.get(obstacle).sprite
+            obstacles.add(Pair(sprite.x.toInt(), sprite.y.toInt()))
+        }
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }
@@ -48,30 +47,47 @@ class Movement : EntitySystem() {
             if (controlledMap.get(entity).selected) {
                 selectedPositions.add(entity)
             }
+
+            val animatablePosition = animatablePositionMap.get(entity)
+            if (animatablePosition.target.dst(animatablePosition.position) > 1f) {
+                animatablePosition.position.add(animatablePosition.velocity.cpy().scl(deltaTime))
+            } else if (animatablePosition.target.x != animatablePosition.position.x &&
+                            animatablePosition.target.y != animatablePosition.position.y
+            ) {
+                animatablePosition.position = animatablePosition.target.cpy()
+            }
         }
         drawShapes(selectedPositions)
 
         // Move Logic
+        // TODO: Really need to just figure out the single selected issue and move this into the
+        // loop
         state.selected?.let { selected ->
             val selectedControlled = controlledMap.get(selected)
             selectedControlled.desiredMove?.let { moveLocation ->
-                val selectedPosition = animatablePositionMap.get(selected).position
+                val selectedAnimatablePosition = animatablePositionMap.get(selected)
                 val distance =
-                    findWalkDistance(
-                        selectedPosition.x.toInt(),
-                        selectedPosition.y.toInt(),
-                        moveLocation.x.toInt(),
-                        moveLocation.y.toInt(),
-                    )
-                if (distance <= selectedControlled.walkRange && selectedControlled.actionPoints > 0) {
-                    selectedPosition.x = moveLocation.x
-                    selectedPosition.y = moveLocation.y
+                        findWalkDistance(
+                                selectedAnimatablePosition.position.x.toInt(),
+                                selectedAnimatablePosition.position.y.toInt(),
+                                moveLocation.x.toInt(),
+                                moveLocation.y.toInt(),
+                        )
+                if (distance <= selectedControlled.walkRange && selectedControlled.actionPoints > 0
+                ) {
+                    selectedAnimatablePosition.target = moveLocation.cpy()
+                    selectedAnimatablePosition.velocity =
+                            moveLocation
+                                    .cpy()
+                                    .sub(selectedAnimatablePosition.position)
+                                    .nor()
+                                    .scl(selectedAnimatablePosition.speed)
 
                     selectedControlled.desiredMove = null
                     selectedControlled.actionPoints -= 1
                     if (selectedControlled.actionPoints <= 0) spendUnit(selectedControlled, state)
                 }
-                //TODO: Implement two action point moves
+                // TODO: Implement two action point moves
             }
         }
     }
@@ -103,12 +119,12 @@ class Movement : EntitySystem() {
             shapeRenderer.rect(current.x.toFloat(), current.y.toFloat(), 1f, 1f)
             if (current.distance < range) {
                 val candidates =
-                    listOf(
-                        Pair(current.x + 1, current.y),
-                        Pair(current.x - 1, current.y),
-                        Pair(current.x, current.y + 1),
-                        Pair(current.x, current.y - 1)
-                    )
+                        listOf(
+                                Pair(current.x + 1, current.y),
+                                Pair(current.x - 1, current.y),
+                                Pair(current.x, current.y + 1),
+                                Pair(current.x, current.y - 1)
+                        )
                 for (tile in candidates) {
                     if (tile.first < 0 || tile.second < 0) break
                     val id = (tile.first + tile.second * state.viewport.worldWidth.toInt())
@@ -132,12 +148,12 @@ class Movement : EntitySystem() {
         while (tileQueue.isNotEmpty()) {
             val current = tileQueue.removeFirst()
             val candidates =
-                listOf(
-                    Pair(current.x + 1, current.y),
-                    Pair(current.x - 1, current.y),
-                    Pair(current.x, current.y + 1),
-                    Pair(current.x, current.y - 1)
-                )
+                    listOf(
+                            Pair(current.x + 1, current.y),
+                            Pair(current.x - 1, current.y),
+                            Pair(current.x, current.y + 1),
+                            Pair(current.x, current.y - 1)
+                    )
             for (tile in candidates) {
                 if (tile.first < 0 || tile.second < 0) break
                 if (tile.first == x2 && tile.second == y2) return current.distance + 1
