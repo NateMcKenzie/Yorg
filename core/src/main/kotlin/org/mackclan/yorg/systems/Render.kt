@@ -119,12 +119,7 @@ class Render : EntitySystem() {
     }
 
     private fun drawHighlight(position : Vector2) {
-        var rightX = position.x + 1f // Hardcoding size of unit at 1x1. Change if adding tanks or something later
-        var topY = position.y + 1f
         shapeRenderer.color = Color.YELLOW
-        shapeRenderer.line(rightX, position.y, rightX, topY) // right
-        shapeRenderer.line(position.x, position.y, position.x, topY) // left
-        shapeRenderer.line(position.x, topY, rightX, topY) // top
-        shapeRenderer.line(position.x, position.y, rightX, position.y) // bottom
+        shapeRenderer.rect(position.x, position.y, 1f, 1f) // Hardcoding size of unit at 1x1. Change if adding tanks or something later
     }
 }
