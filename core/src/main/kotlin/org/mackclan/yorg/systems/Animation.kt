@@ -5,9 +5,9 @@ import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import org.mackclan.yorg.components.GameState
-import org.mackclan.yorg.components.AnimationComponent
 import org.mackclan.yorg.components.AnimatablePosition
+import org.mackclan.yorg.components.AnimationComponent
+import org.mackclan.yorg.components.GameState
 
 class Animation : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
@@ -20,7 +20,8 @@ class Animation : EntitySystem() {
     private val screenViewport by lazy { ScreenViewport() }
 
     override fun addedToEngine(engine: Engine) {
-        entities = engine.getEntitiesFor(Family.all(AnimationComponent::class.java, AnimatablePosition::class.java).get())
+        entities =
+            engine.getEntitiesFor(Family.all(AnimationComponent::class.java, AnimatablePosition::class.java).get())
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }

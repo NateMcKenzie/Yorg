@@ -3,13 +3,11 @@ package org.mackclan.yorg.systems
 import com.badlogic.ashley.core.*
 import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.math.Vector2
-import kotlin.math.abs
-import kotlin.math.floor
 import org.mackclan.yorg.components.*
 import org.mackclan.yorg.entities.createPopup
-import org.mackclan.yorg.systems.Turn
+import kotlin.math.abs
+import kotlin.math.floor
 
 class Clicks : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
@@ -25,13 +23,13 @@ class Clicks : EntitySystem() {
 
     override fun addedToEngine(engine: Engine) {
         entities =
-                engine.getEntitiesFor(
-                        Family.all(AnimatablePosition::class.java, Controlled::class.java).get()
-                )
+            engine.getEntitiesFor(
+                Family.all(AnimatablePosition::class.java, Controlled::class.java).get()
+            )
         obstacles =
-                engine.getEntitiesFor(
-                        Family.all(SpriteComponent::class.java, Cover::class.java).get()
-                )
+            engine.getEntitiesFor(
+                Family.all(SpriteComponent::class.java, Cover::class.java).get()
+            )
 
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
@@ -56,7 +54,7 @@ class Clicks : EntitySystem() {
                 val clickedPosition = animatablePositionMap.get(clickedEntity).position
                 if (state.playerTurn == controlled.playerControlled) {
                     // Toggle select of clicked unit
-                    if(controlled.actionPoints > 0){
+                    if (controlled.actionPoints > 0) {
                         controlled.selected = !controlled.selected
                         state.selected = clickedEntity
                     }
@@ -68,30 +66,30 @@ class Clicks : EntitySystem() {
                         val selectedControlled = controlledMap.get(selected)
                         if (selectedControlled.actionPoints > 0) {
                             val distance =
-                                    findSquaredDistance(
-                                            clickedPosition.x,
-                                            clickedPosition.y,
-                                            selectedPosition.x,
-                                            selectedPosition.y
-                                    ) - 1
+                                findSquaredDistance(
+                                    clickedPosition.x,
+                                    clickedPosition.y,
+                                    selectedPosition.x,
+                                    selectedPosition.y
+                                ) - 1
                             val chance =
-                                    calculateChance(
-                                            selectedPosition,
-                                            clickedPosition,
-                                            distance,
-                                            selectedInfo.range
-                                    )
+                                calculateChance(
+                                    selectedPosition,
+                                    clickedPosition,
+                                    distance,
+                                    selectedInfo.range
+                                )
                             val damage =
-                                    (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
+                                (selectedInfo.damage * (selectedInfo.range - distance)).toInt()
                             val popup =
-                                    createPopup(damage, chance) { hit ->
-                                        if (hit) {
-                                            val info = unitInfoMap.get(clickedEntity)
-                                            info.health -= damage
-                                            if (info.health <= 0) engine.removeEntity(clickedEntity)
-                                        }
-                                        spendUnit(selectedControlled, state)
+                                createPopup(damage, chance) { hit ->
+                                    if (hit) {
+                                        val info = unitInfoMap.get(clickedEntity)
+                                        info.health -= damage
+                                        if (info.health <= 0) engine.removeEntity(clickedEntity)
                                     }
+                                    spendUnit(selectedControlled, state)
+                                }
                             engine.addEntity(popup)
                         }
                     }
@@ -107,10 +105,10 @@ class Clicks : EntitySystem() {
     }
 
     private fun calculateChance(
-            sourcePosition: Vector2,
-            targetPosition: Vector2,
-            distance: Float,
-            range: Int
+        sourcePosition: Vector2,
+        targetPosition: Vector2,
+        distance: Float,
+        range: Int
     ): Float {
         val baseChance = (range - distance) / range
 

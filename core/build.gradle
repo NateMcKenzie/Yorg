@@ -6,7 +6,7 @@ dependencies {
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
   api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
-  if(enableGraalNative == 'true') {
+  if (enableGraalNative == 'true') {
     implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
   }
 }

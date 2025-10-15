@@ -7,12 +7,7 @@ import org.mackclan.yorg.components.CoverLevel
 import org.mackclan.yorg.entities.createGameState
 import org.mackclan.yorg.entities.createObstacle
 import org.mackclan.yorg.entities.createUnit
-import org.mackclan.yorg.systems.Clicks
-import org.mackclan.yorg.systems.HUD
-import org.mackclan.yorg.systems.Movement
-import org.mackclan.yorg.systems.Render
-import org.mackclan.yorg.systems.Turn
-import org.mackclan.yorg.systems.Animation
+import org.mackclan.yorg.systems.*
 
 class GameView : ApplicationListener {
     private val engine by lazy { Engine() }

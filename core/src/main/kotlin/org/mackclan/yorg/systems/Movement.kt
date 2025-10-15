@@ -9,11 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import org.mackclan.yorg.components.AnimatablePosition
-import org.mackclan.yorg.components.Controlled
-import org.mackclan.yorg.components.Cover
-import org.mackclan.yorg.components.GameState
-import org.mackclan.yorg.components.SpriteComponent
+import org.mackclan.yorg.components.*
 
 class Movement : EntitySystem() {
     private lateinit var movables: ImmutableArray<Entity>
@@ -28,9 +24,9 @@ class Movement : EntitySystem() {
 
     override fun addedToEngine(engine: Engine) {
         movables =
-                engine.getEntitiesFor(
-                        Family.all(Controlled::class.java, AnimatablePosition::class.java).get()
-                )
+            engine.getEntitiesFor(
+                Family.all(Controlled::class.java, AnimatablePosition::class.java).get()
+            )
         engine.getEntitiesFor(Family.all(Cover::class.java).get()).forEach { obstacle ->
             val sprite = spriteMap.get(obstacle).sprite
             obstacles.add(Pair(sprite.x.toInt(), sprite.y.toInt()))
@@ -52,7 +48,7 @@ class Movement : EntitySystem() {
             if (animatablePosition.target.dst(animatablePosition.position) > 1f) {
                 animatablePosition.position.add(animatablePosition.velocity.cpy().scl(deltaTime))
             } else if (animatablePosition.target.x != animatablePosition.position.x &&
-                            animatablePosition.target.y != animatablePosition.position.y
+                animatablePosition.target.y != animatablePosition.position.y
             ) {
                 animatablePosition.position = animatablePosition.target.cpy()
             }
@@ -67,21 +63,21 @@ class Movement : EntitySystem() {
             selectedControlled.desiredMove?.let { moveLocation ->
                 val selectedAnimatablePosition = animatablePositionMap.get(selected)
                 val distance =
-                        findWalkDistance(
-                                selectedAnimatablePosition.position.x.toInt(),
-                                selectedAnimatablePosition.position.y.toInt(),
-                                moveLocation.x.toInt(),
-                                moveLocation.y.toInt(),
-                        )
+                    findWalkDistance(
+                        selectedAnimatablePosition.position.x.toInt(),
+                        selectedAnimatablePosition.position.y.toInt(),
+                        moveLocation.x.toInt(),
+                        moveLocation.y.toInt(),
+                    )
                 if (distance <= selectedControlled.walkRange && selectedControlled.actionPoints > 0
                 ) {
                     selectedAnimatablePosition.target = moveLocation.cpy()
                     selectedAnimatablePosition.velocity =
-                            moveLocation
-                                    .cpy()
-                                    .sub(selectedAnimatablePosition.position)
-                                    .nor()
-                                    .scl(selectedAnimatablePosition.speed)
+                        moveLocation
+                            .cpy()
+                            .sub(selectedAnimatablePosition.position)
+                            .nor()
+                            .scl(selectedAnimatablePosition.speed)
 
                     selectedControlled.desiredMove = null
                     selectedControlled.actionPoints -= 1
@@ -119,12 +115,12 @@ class Movement : EntitySystem() {
             shapeRenderer.rect(current.x.toFloat(), current.y.toFloat(), 1f, 1f)
             if (current.distance < range) {
                 val candidates =
-                        listOf(
-                                Pair(current.x + 1, current.y),
-                                Pair(current.x - 1, current.y),
-                                Pair(current.x, current.y + 1),
-                                Pair(current.x, current.y - 1)
-                        )
+                    listOf(
+                        Pair(current.x + 1, current.y),
+                        Pair(current.x - 1, current.y),
+                        Pair(current.x, current.y + 1),
+                        Pair(current.x, current.y - 1)
+                    )
                 for (tile in candidates) {
                     if (tile.first < 0 || tile.second < 0) break
                     val id = (tile.first + tile.second * state.viewport.worldWidth.toInt())
@@ -148,12 +144,12 @@ class Movement : EntitySystem() {
         while (tileQueue.isNotEmpty()) {
             val current = tileQueue.removeFirst()
             val candidates =
-                    listOf(
-                            Pair(current.x + 1, current.y),
-                            Pair(current.x - 1, current.y),
-                            Pair(current.x, current.y + 1),
-                            Pair(current.x, current.y - 1)
-                    )
+                listOf(
+                    Pair(current.x + 1, current.y),
+                    Pair(current.x - 1, current.y),
+                    Pair(current.x, current.y + 1),
+                    Pair(current.x, current.y - 1)
+                )
             for (tile in candidates) {
                 if (tile.first < 0 || tile.second < 0) break
                 if (tile.first == x2 && tile.second == y2) return current.distance + 1

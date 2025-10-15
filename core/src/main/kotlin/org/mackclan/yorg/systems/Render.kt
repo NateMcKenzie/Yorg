@@ -11,11 +11,7 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import org.mackclan.yorg.components.Controlled
-import org.mackclan.yorg.components.GameState
-import org.mackclan.yorg.components.SpriteComponent
-import org.mackclan.yorg.components.UnitInfo
-import org.mackclan.yorg.components.AnimatablePosition
+import org.mackclan.yorg.components.*
 
 class Render : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
@@ -118,8 +114,13 @@ class Render : EntitySystem() {
         shapeRenderer.end()
     }
 
-    private fun drawHighlight(position : Vector2) {
+    private fun drawHighlight(position: Vector2) {
         shapeRenderer.color = Color.YELLOW
-        shapeRenderer.rect(position.x, position.y, 1f, 1f) // Hardcoding size of unit at 1x1. Change if adding tanks or something later
+        shapeRenderer.rect(
+            position.x,
+            position.y,
+            1f,
+            1f
+        ) // Hardcoding size of unit at 1x1. Change if adding tanks or something later
     }
 }
