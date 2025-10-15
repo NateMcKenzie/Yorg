@@ -9,10 +9,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import com.badlogic.gdx.math.Vector2
 import org.mackclan.yorg.components.Controlled
 import org.mackclan.yorg.components.Cover
 import org.mackclan.yorg.components.GameState
 import org.mackclan.yorg.components.SpriteComponent
+import org.mackclan.yorg.components.AnimatablePosition
 import org.mackclan.yorg.systems.Turn
 
 class Movement : EntitySystem() {
@@ -21,14 +23,14 @@ class Movement : EntitySystem() {
     private lateinit var state: GameState
 
     private val spriteMap = ComponentMapper.getFor(SpriteComponent::class.java)
+    private val animatablePositionMap = ComponentMapper.getFor(AnimatablePosition::class.java)
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
-    private val batch by lazy { SpriteBatch() }
     private val shapeRenderer by lazy { ShapeRenderer() }
     private val screenViewport by lazy { ScreenViewport() }
 
     override fun addedToEngine(engine: Engine) {
         movables =
-            engine.getEntitiesFor(Family.all(Controlled::class.java, SpriteComponent::class.java).get())
+            engine.getEntitiesFor(Family.all(Controlled::class.java, AnimatablePosition::class.java).get())
         engine.getEntitiesFor(Family.all(Cover::class.java).get())
             .forEach { obstacle ->
                 val sprite = spriteMap.get(obstacle).sprite
@@ -41,30 +43,29 @@ class Movement : EntitySystem() {
     override fun update(deltaTime: Float) {
         // Render Ranges
         state.viewport.apply()
-        batch.projectionMatrix = state.viewport.camera.combined
-        val selectedSprites = Array<Entity>()
+        val selectedPositions = Array<Entity>()
         for (entity in movables) {
             if (controlledMap.get(entity).selected) {
-                selectedSprites.add(entity)
+                selectedPositions.add(entity)
             }
         }
-        drawShapes(selectedSprites)
+        drawShapes(selectedPositions)
 
         // Move Logic
         state.selected?.let { selected ->
             val selectedControlled = controlledMap.get(selected)
             selectedControlled.desiredMove?.let { moveLocation ->
-                val selectedSprite = spriteMap.get(selected).sprite
+                val selectedPosition = animatablePositionMap.get(selected).position
                 val distance =
                     findWalkDistance(
-                        selectedSprite.x.toInt(),
-                        selectedSprite.y.toInt(),
+                        selectedPosition.x.toInt(),
+                        selectedPosition.y.toInt(),
                         moveLocation.x.toInt(),
                         moveLocation.y.toInt(),
                     )
                 if (distance <= selectedControlled.walkRange && selectedControlled.actionPoints > 0) {
-                    selectedSprite.x = moveLocation.x
-                    selectedSprite.y = moveLocation.y
+                    selectedPosition.x = moveLocation.x
+                    selectedPosition.y = moveLocation.y
 
                     selectedControlled.desiredMove = null
                     selectedControlled.actionPoints -= 1
@@ -75,18 +76,18 @@ class Movement : EntitySystem() {
         }
     }
 
-    private fun drawShapes(selectedSprites: Array<Entity>) {
+    private fun drawShapes(selectedPositions: Array<Entity>) {
         shapeRenderer.projectionMatrix = state.viewport.camera.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        for (selected in selectedSprites) {
-            val sprite = spriteMap.get(selected).sprite
+        for (selected in selectedPositions) {
+            val position = animatablePositionMap.get(selected).position
             val range = controlledMap.get(selected).walkRange
-            drawRange(sprite, range)
+            drawRange(position, range)
         }
         shapeRenderer.end()
     }
 
-    private fun drawRange(sprite: com.badlogic.gdx.graphics.g2d.Sprite, range: Int) {
+    private fun drawRange(position: Vector2, range: Int) {
         class bfsTile(val x: Int, val y: Int, val distance: Int)
         shapeRenderer.color = Color(0f, 0f, 0.3f, 0.2f)
         Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -94,8 +95,8 @@ class Movement : EntitySystem() {
 
         val listed = HashSet<Int>()
         val tileQueue = ArrayDeque<bfsTile>()
-        tileQueue.add(bfsTile(sprite.x.toInt(), sprite.y.toInt(), 0))
-        listed.add((sprite.x + sprite.y * state.viewport.worldWidth).toInt())
+        tileQueue.add(bfsTile(position.x.toInt(), position.y.toInt(), 0))
+        listed.add((position.x + position.y * state.viewport.worldWidth).toInt())
 
         while (tileQueue.isNotEmpty()) {
             val current = tileQueue.removeFirst()

@@ -17,6 +17,7 @@ class Clicks : EntitySystem() {
 
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val spriteComponentMap = ComponentMapper.getFor(SpriteComponent::class.java)
+    private val animatablePositionMap = ComponentMapper.getFor(AnimatablePosition::class.java)
     private val unitInfoMap = ComponentMapper.getFor(UnitInfo::class.java)
     private val coverMap = ComponentMapper.getFor(Cover::class.java)
 
@@ -25,7 +26,7 @@ class Clicks : EntitySystem() {
     override fun addedToEngine(engine: Engine) {
         entities =
                 engine.getEntitiesFor(
-                        Family.all(SpriteComponent::class.java, Controlled::class.java).get()
+                        Family.all(AnimatablePosition::class.java, Controlled::class.java).get()
                 )
         obstacles =
                 engine.getEntitiesFor(
@@ -45,14 +46,14 @@ class Clicks : EntitySystem() {
 
             var clickedEntity: Entity? = null
             for (entity in entities) {
-                val sprite = spriteComponentMap.get(entity).sprite
-                if (sprite.x == touchPos.x && sprite.y == touchPos.y) {
+                val position = animatablePositionMap.get(entity).position
+                if (position.x == touchPos.x && position.y == touchPos.y) {
                     clickedEntity = entity
                 }
             }
             if (clickedEntity != null) {
                 val controlled = controlledMap.get(clickedEntity)
-                val sprite = spriteComponentMap.get(clickedEntity).sprite
+                val clickedPosition = animatablePositionMap.get(clickedEntity).position
                 if (state.playerTurn == controlled.playerControlled) {
                     // Toggle select of clicked unit
                     if(controlled.actionPoints > 0){
@@ -62,21 +63,21 @@ class Clicks : EntitySystem() {
                 } else {
                     // Open shoot popup
                     state.selected?.let { selected ->
-                        val selectedSprite = spriteComponentMap.get(selected).sprite
+                        val selectedPosition = animatablePositionMap.get(selected).position
                         val selectedInfo = unitInfoMap.get(selected)
                         val selectedControlled = controlledMap.get(selected)
                         if (selectedControlled.actionPoints > 0) {
                             val distance =
                                     findSquaredDistance(
-                                            sprite.x,
-                                            sprite.y,
-                                            selectedSprite.x,
-                                            selectedSprite.y
+                                            clickedPosition.x,
+                                            clickedPosition.y,
+                                            selectedPosition.x,
+                                            selectedPosition.y
                                     ) - 1
                             val chance =
                                     calculateChance(
-                                            selectedSprite,
-                                            sprite,
+                                            selectedPosition,
+                                            clickedPosition,
                                             distance,
                                             selectedInfo.range
                                     )
@@ -106,29 +107,28 @@ class Clicks : EntitySystem() {
     }
 
     private fun calculateChance(
-            sourceSprite: Sprite,
-            targetSprite: Sprite,
+            sourcePosition: Vector2,
+            targetPosition: Vector2,
             distance: Float,
             range: Int
     ): Float {
         val baseChance = (range - distance) / range
 
         // Factor in cover. TODO: Currently very simplistic
-        val absY = abs(sourceSprite.y - targetSprite.y)
-        val absX = abs(sourceSprite.x - targetSprite.x)
+        val absY = abs(sourcePosition.y - targetPosition.y)
+        val absX = abs(sourcePosition.x - targetPosition.x)
         val direction = Vector2()
         if (absY > absX) {
-            direction.y = if (sourceSprite.y < targetSprite.y) -1f else 1f
+            direction.y = if (sourcePosition.y < targetPosition.y) -1f else 1f
         } else {
-            direction.x = if (sourceSprite.x < targetSprite.x) -1f else 1f
+            direction.x = if (sourcePosition.x < targetPosition.x) -1f else 1f
         }
-        val primaryCoverPos = Vector2(targetSprite.x, targetSprite.y).add(direction)
+        val primaryCoverPos = Vector2(targetPosition).add(direction)
 
         var chanceModifier = 0f
         for (obstacle in obstacles) {
             val sprite = spriteComponentMap.get(obstacle).sprite
-            val location = Vector2(sprite.x, sprite.y)
-            if (location == primaryCoverPos) {
+            if (sprite.x == primaryCoverPos.x && sprite.y == primaryCoverPos.y) {
                 val cover = coverMap.get(obstacle).level
                 chanceModifier = cover.ordinal * -0.2f
             }
