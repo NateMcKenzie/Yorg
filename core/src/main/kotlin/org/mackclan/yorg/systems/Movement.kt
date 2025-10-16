@@ -71,11 +71,11 @@ class Movement : EntitySystem() {
 
             // Animate movement of any moving unit
             val animatablePosition = animatablePositionMap.get(entity)
-            if (animatablePosition.target.dst(animatablePosition.position) > 1f) {
-                animatablePosition.position.add(animatablePosition.velocity.cpy().scl(deltaTime))
-            } else if (animatablePosition.target.x != animatablePosition.position.x &&
-                            animatablePosition.target.y != animatablePosition.position.y
-            ) {
+            val scaledMove = animatablePosition.velocity.cpy().scl(deltaTime)
+            val nextPos = animatablePosition.position.cpy().add(scaledMove)
+            if (nextPos.dst(animatablePosition.target) <= animatablePosition.position.dst(animatablePosition.target)){
+                animatablePosition.position = nextPos.cpy()
+            } else {
                 animatablePosition.position = animatablePosition.target.cpy()
             }
         }
