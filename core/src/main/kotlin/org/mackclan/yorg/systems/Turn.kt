@@ -34,7 +34,6 @@ class Turn : EntitySystem() {
         for (unit in units) {
             val controlled = controlledMap.get(unit)
             if (controlled.playerControlled == state.playerTurn) {
-                controlled.selected = false
                 controlled.actionPoints = 2
             }
             state.selected = null
@@ -47,7 +46,6 @@ class Turn : EntitySystem() {
 
 fun spendUnit(controlled: Controlled, state: GameState) {
     controlled.actionPoints = 0
-    controlled.selected = false
     state.selected = null
 }
 

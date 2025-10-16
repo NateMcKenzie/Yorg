@@ -8,13 +8,12 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.*
 
 class Render : EntitySystem() {
-    private lateinit var entities: ImmutableArray<Entity>
+    private lateinit var sprites: ImmutableArray<Entity>
     private lateinit var movables: ImmutableArray<Entity>
     private lateinit var state: GameState
 
@@ -29,8 +28,11 @@ class Render : EntitySystem() {
     private val font by lazy { BitmapFont() }
 
     override fun addedToEngine(engine: Engine) {
-        entities = engine.getEntitiesFor(Family.all(SpriteComponent::class.java).get())
-        movables = engine.getEntitiesFor(Family.all(Controlled::class.java, AnimatablePosition::class.java).get())
+        sprites = engine.getEntitiesFor(Family.all(SpriteComponent::class.java).get())
+        movables =
+                engine.getEntitiesFor(
+                        Family.all(Controlled::class.java, AnimatablePosition::class.java).get()
+                )
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }
@@ -40,19 +42,13 @@ class Render : EntitySystem() {
         state.viewport.apply()
         batch.projectionMatrix = state.viewport.camera.combined
         batch.begin()
-        for (entity in entities) {
+        for (entity in sprites) {
             val sprite = spriteComponentMap.get(entity).sprite
             sprite.draw(batch)
         }
-        val selectedPositions = Array<Entity>()
-        for (entity in movables) {
-            if (controlledMap.has(entity) && controlledMap.get(entity).selected) {
-                selectedPositions.add(entity)
-            }
-        }
         batch.end()
 
-        drawShapes(selectedPositions)
+        drawShapes(state.selected)
 
         screenViewport.apply()
         batch.projectionMatrix = screenViewport.camera.combined
@@ -64,10 +60,10 @@ class Render : EntitySystem() {
 
             // Need to convert between coordinate systems
             val gameWorldPos =
-                Vector2(
-                    position.x + 0.5f,
-                    position.y + 1
-                ) // Put text on top and "centered" to be modified in screen coords later
+                    Vector2(
+                            position.x + 0.5f,
+                            position.y + 1
+                    ) // Put text on top and "centered" to be modified in screen coords later
             val screenPos = Vector2()
             state.viewport.project(screenPos.set(gameWorldPos))
 
@@ -87,17 +83,20 @@ class Render : EntitySystem() {
         screenViewport.update(width, height, true)
     }
 
-    private fun drawShapes(selectedPositions: Array<Entity>) {
+    private fun drawShapes(selected: Entity?) {
+        // Camera setup
         val cam = state.viewport.camera
         val minX = cam.position.x - state.viewport.worldWidth / 2
         val maxX = cam.position.x + state.viewport.worldWidth / 2
         val minY = cam.position.y - state.viewport.worldHeight / 2
         val maxY = cam.position.y + state.viewport.worldHeight / 2
 
+        // Renderer setup
         shapeRenderer.projectionMatrix = cam.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
         shapeRenderer.color = Color.DARK_GRAY
 
+        // Draw gridlines
         for (x in minX.toInt()..maxX.toInt()) {
             shapeRenderer.line(x.toFloat(), minY, x.toFloat(), maxY)
         }
@@ -105,22 +104,18 @@ class Render : EntitySystem() {
             shapeRenderer.line(minX, y.toFloat(), maxX, y.toFloat())
         }
 
-        // TODO: There's only one though right? Might be better off using gamestate selected for
-        // this?
-        for (selected in selectedPositions) {
-            val position = animatablePositionMap.get(selected).position
-            drawHighlight(position)
+        // Draw highlight around selected unit
+        selected?.let { unit ->
+            val position = animatablePositionMap.get(unit).position
+            shapeRenderer.color = Color.YELLOW
+            shapeRenderer.rect(
+                    position.x,
+                    position.y,
+                    1f,
+                    1f
+            ) // Hardcoding size of unit at 1x1. Change if adding tanks or something later
         }
-        shapeRenderer.end()
-    }
 
-    private fun drawHighlight(position: Vector2) {
-        shapeRenderer.color = Color.YELLOW
-        shapeRenderer.rect(
-            position.x,
-            position.y,
-            1f,
-            1f
-        ) // Hardcoding size of unit at 1x1. Change if adding tanks or something later
+        shapeRenderer.end()
     }
 }

@@ -53,9 +53,8 @@ class Clicks : EntitySystem() {
                 val controlled = controlledMap.get(clickedEntity)
                 val clickedPosition = animatablePositionMap.get(clickedEntity).position
                 if (state.playerTurn == controlled.playerControlled) {
-                    // Toggle select of clicked unit
+                    // Select clicked unit
                     if (controlled.actionPoints > 0) {
-                        controlled.selected = !controlled.selected
                         state.selected = clickedEntity
                     }
                 } else {
