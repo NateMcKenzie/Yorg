@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.*
 import org.mackclan.yorg.utils.bfsTile
+import kotlin.math.abs
 
 class Movement : EntitySystem() {
     private lateinit var movables: ImmutableArray<Entity>
@@ -57,8 +58,7 @@ class Movement : EntitySystem() {
                             tiles.get(moveLocation.x.toInt() + moveLocation.y.toInt() * state.viewport.worldWidth.toInt())
                     if (desiredTile != null && controlled.actionPoints > 0) {
                         animatablePosition.path.clear()
-                        animatablePosition.path.addAll(getPath(tiles, moveLocation))
-                        animatablePosition.path.removeAt(0)
+                        animatablePosition.path.addAll(smoothPath(getPath(tiles, moveLocation)))
                         controlled.desiredMove = null
                         controlled.actionPoints -= 1
                         if (controlled.actionPoints <= 0) spendUnit(controlled, state)
@@ -139,6 +139,68 @@ class Movement : EntitySystem() {
 
         return path.reversed()
     }
+
+private fun smoothPath(path: List<bfsTile>): List<bfsTile> {
+    if (path.size < 3) return path.subList(1,path.size)
+
+    val smoothed = mutableListOf(path[0])
+    var current = 0
+
+    while (current < path.size - 1) {
+        // Look ahead as far as possible
+        var farthest = current + 1
+        for (i in current + 2 ..< path.size) {
+            if (hasLineOfSight(path[current], path[i])) {
+                farthest = i
+            } else {
+                break
+            }
+        }
+
+        smoothed.add(path[farthest])
+        current = farthest
+    }
+
+    smoothed.removeAt(0)
+    return smoothed
+}
+
+private fun hasLineOfSight(start: bfsTile, end: bfsTile): Boolean {
+    // Bresenham's Line Algorithm
+    val dx = abs(end.x - start.x)
+    val dy = abs(end.y - start.y)
+    var x = start.x
+    var y = start.y
+    val stepX = if (end.x > start.x) 1 else -1
+    val stepY = if (end.y > start.y) 1 else -1
+
+    if (dx > dy) {
+        var err = dx / 2.0f
+        while (x != end.x) {
+            if (obstacles[y][x]) return false
+            err -= dy
+            if (err < 0) {
+                y += stepY
+                err += dx.toFloat()
+            }
+            x += stepX
+        }
+    } else {
+        var err = dy / 2.0f
+        while (y != end.y) {
+            if (obstacles[y][x]) return false
+            err -= dx
+            if (err < 0) {
+                x += stepX
+                err += dy.toFloat()
+            }
+            y += stepY
+        }
+    }
+
+    return true
+}
+
 
     private fun drawRange(tiles: Collection<bfsTile>) {
         shapeRenderer.projectionMatrix = state.viewport.camera.combined
