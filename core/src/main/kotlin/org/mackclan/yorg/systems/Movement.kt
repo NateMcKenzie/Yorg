@@ -7,13 +7,12 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.*
 
 class Movement : EntitySystem() {
     private lateinit var movables: ImmutableArray<Entity>
-    private val obstacles by lazy { HashSet<Pair<Int, Int>>() }
+    private lateinit var obstacles: MutableList<MutableList<Boolean>>
     private lateinit var state: GameState
 
     private val spriteMap = ComponentMapper.getFor(SpriteComponent::class.java)
@@ -23,16 +22,23 @@ class Movement : EntitySystem() {
     private val screenViewport by lazy { ScreenViewport() }
 
     override fun addedToEngine(engine: Engine) {
+        val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
+        state = gameState.components.first() as GameState
+
+        obstacles =
+                MutableList<MutableList<Boolean>>(state.viewport.worldHeight.toInt()) {
+                    MutableList<Boolean>(state.viewport.worldWidth.toInt()) { false }
+                }
+
         movables =
                 engine.getEntitiesFor(
                         Family.all(Controlled::class.java, AnimatablePosition::class.java).get()
                 )
+
         engine.getEntitiesFor(Family.all(Cover::class.java).get()).forEach { obstacle ->
             val sprite = spriteMap.get(obstacle).sprite
-            obstacles.add(Pair(sprite.x.toInt(), sprite.y.toInt()))
+            obstacles[sprite.y.toInt()][sprite.x.toInt()] = true
         }
-        val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
-        state = gameState.components.first() as GameState
     }
 
     override fun update(deltaTime: Float) {
@@ -41,18 +47,14 @@ class Movement : EntitySystem() {
         for (entity in movables) {
             // Move selected unit if needed
             if (entity == state.selected) {
-                drawRange(entity)
+                val animatablePosition = animatablePositionMap.get(entity)
                 val controlled = controlledMap.get(entity)
+                val tiles = genBfsGraph(animatablePosition.position, controlled.walkRange)
+                drawRange(tiles.values)
                 controlled.desiredMove?.let { moveLocation ->
-                    val animatablePosition = animatablePositionMap.get(entity)
-                    val distance =
-                            findWalkDistance(
-                                    animatablePosition.position.x.toInt(),
-                                    animatablePosition.position.y.toInt(),
-                                    moveLocation.x.toInt(),
-                                    moveLocation.y.toInt(),
-                            )
-                    if (distance <= controlled.walkRange && controlled.actionPoints > 0) {
+                    val desiredTile =
+                            tiles.get(moveLocation.x.toInt() + moveLocation.y.toInt() * state.viewport.worldWidth.toInt())
+                    if (desiredTile != null && controlled.actionPoints > 0) {
                         animatablePosition.target = moveLocation.cpy()
                         animatablePosition.velocity =
                                 moveLocation
@@ -65,15 +67,17 @@ class Movement : EntitySystem() {
                         controlled.actionPoints -= 1
                         if (controlled.actionPoints <= 0) spendUnit(controlled, state)
                     }
-                    // TODO: Implement two action point moves
                 }
+                // TODO: Implement two action point moves
             }
 
             // Animate movement of any moving unit
             val animatablePosition = animatablePositionMap.get(entity)
             val scaledMove = animatablePosition.velocity.cpy().scl(deltaTime)
             val nextPos = animatablePosition.position.cpy().add(scaledMove)
-            if (nextPos.dst(animatablePosition.target) <= animatablePosition.position.dst(animatablePosition.target)){
+            if (nextPos.dst(animatablePosition.target) <=
+                            animatablePosition.position.dst(animatablePosition.target)
+            ) {
                 animatablePosition.position = nextPos.cpy()
             } else {
                 animatablePosition.position = animatablePosition.target.cpy()
@@ -81,28 +85,19 @@ class Movement : EntitySystem() {
         }
     }
 
-    private class bfsTile(val x: Int, val y: Int, val distance: Int)
+    private class bfsTile(val x: Int, val y: Int, val distance: Int, val predecessor: bfsTile?)
 
-    private fun drawRange(entity : Entity) {
-        // Renderer setup
-        shapeRenderer.projectionMatrix = state.viewport.camera.combined
-        shapeRenderer.color = Color(0f, 0f, 0.3f, 0.2f)
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-
+    private fun genBfsGraph(position: Vector2, range: Int): Map<Int, bfsTile> {
         // BFS setup
-        val position = animatablePositionMap.get(entity).position
-        val listed = HashSet<Int>()
+        val listed = HashMap<Int, bfsTile>()
         val tileQueue = ArrayDeque<bfsTile>()
-        tileQueue.add(bfsTile(position.x.toInt(), position.y.toInt(), 0))
-        listed.add((position.x + position.y * state.viewport.worldWidth).toInt())
+        val startTile = bfsTile(position.x.toInt(), position.y.toInt(), 0, null)
+        tileQueue.add(startTile)
+        listed.put((position.x + position.y * state.viewport.worldWidth).toInt(), startTile)
 
         // BFS main
-        val range = controlledMap.get(entity).walkRange
         while (tileQueue.isNotEmpty()) {
             val current = tileQueue.removeFirst()
-            shapeRenderer.rect(current.x.toFloat(), current.y.toFloat(), 1f, 1f)
             if (current.distance < range) {
                 val candidates =
                         listOf(
@@ -112,46 +107,33 @@ class Movement : EntitySystem() {
                                 Pair(current.x, current.y - 1)
                         )
                 for (tile in candidates) {
-                    if (tile.first < 0 || tile.second < 0) break
-                    val id = (tile.first + tile.second * state.viewport.worldWidth.toInt())
-                    if (!listed.contains(id) && !obstacles.contains(tile)) {
-                        tileQueue.add(bfsTile(tile.first, tile.second, current.distance + 1))
-                        listed.add(id)
+                    val worldWidth = state.viewport.worldWidth.toInt()
+                    val worldHeight = state.viewport.worldHeight.toInt()
+                    if (tile.first < 0 || tile.second < 0 || tile.first >= worldWidth || tile.second >= worldHeight)
+                        continue
+                    val id = tile.first + tile.second * worldWidth
+                    if (!listed.contains(id) && !obstacles[tile.second][tile.first]) {
+                        val nextTile =
+                                bfsTile(tile.first, tile.second, current.distance + 1, current)
+                        tileQueue.add(nextTile)
+                        listed.put(id, nextTile)
                     }
                 }
             }
         }
-
-        shapeRenderer.end()
+        return listed
     }
 
-    private fun findWalkDistance(x1: Int, y1: Int, x2: Int, y2: Int): Int {
-        val listed = HashSet<Int>()
-        val tileQueue = ArrayDeque<bfsTile>()
-        tileQueue.add(bfsTile(x1, y1, 0))
-        listed.add((x1 + y1 * state.viewport.worldWidth).toInt())
-
-        while (tileQueue.isNotEmpty()) {
-            val current = tileQueue.removeFirst()
-            val candidates =
-                    listOf(
-                            Pair(current.x + 1, current.y),
-                            Pair(current.x - 1, current.y),
-                            Pair(current.x, current.y + 1),
-                            Pair(current.x, current.y - 1)
-                    )
-            for (tile in candidates) {
-                if (tile.first < 0 || tile.second < 0) break
-                if (tile.first == x2 && tile.second == y2) return current.distance + 1
-
-                val id = (tile.first + tile.second * state.viewport.worldWidth.toInt())
-                if (!listed.contains(id) && !obstacles.contains(tile)) {
-                    tileQueue.add(bfsTile(tile.first, tile.second, current.distance + 1))
-                    listed.add(id)
-                }
-            }
+    private fun drawRange(tiles: Collection<bfsTile>) {
+        shapeRenderer.projectionMatrix = state.viewport.camera.combined
+        shapeRenderer.color = Color(0f, 0f, 0.3f, 0.2f)
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        for (tile in tiles) {
+            shapeRenderer.rect(tile.x.toFloat(), tile.y.toFloat(), 1f, 1f)
         }
-        return Int.MAX_VALUE
+        shapeRenderer.end()
     }
 
     fun resize(width: Int, height: Int) {
