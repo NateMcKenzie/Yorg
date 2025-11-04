@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.*
+import org.mackclan.yorg.utils.bfsTile
 
 class Movement : EntitySystem() {
     private lateinit var movables: ImmutableArray<Entity>
@@ -55,14 +56,9 @@ class Movement : EntitySystem() {
                     val desiredTile =
                             tiles.get(moveLocation.x.toInt() + moveLocation.y.toInt() * state.viewport.worldWidth.toInt())
                     if (desiredTile != null && controlled.actionPoints > 0) {
-                        animatablePosition.target = moveLocation.cpy()
-                        animatablePosition.velocity =
-                                moveLocation
-                                        .cpy()
-                                        .sub(animatablePosition.position)
-                                        .nor()
-                                        .scl(animatablePosition.speed)
-
+                        animatablePosition.path.clear()
+                        animatablePosition.path.addAll(getPath(tiles, moveLocation))
+                        animatablePosition.path.removeAt(0)
                         controlled.desiredMove = null
                         controlled.actionPoints -= 1
                         if (controlled.actionPoints <= 0) spendUnit(controlled, state)
@@ -73,19 +69,27 @@ class Movement : EntitySystem() {
 
             // Animate movement of any moving unit
             val animatablePosition = animatablePositionMap.get(entity)
-            val scaledMove = animatablePosition.velocity.cpy().scl(deltaTime)
-            val nextPos = animatablePosition.position.cpy().add(scaledMove)
-            if (nextPos.dst(animatablePosition.target) <=
-                            animatablePosition.position.dst(animatablePosition.target)
-            ) {
-                animatablePosition.position = nextPos.cpy()
-            } else {
-                animatablePosition.position = animatablePosition.target.cpy()
+            if (animatablePosition.path.isNotEmpty()){
+                val nextTile = animatablePosition.path.get(0)
+                val target = Vector2(nextTile.x.toFloat(), nextTile.y.toFloat())
+                val velocity = target
+                            .cpy()
+                            .sub(animatablePosition.position)
+                            .nor()
+                            .scl(animatablePosition.speed)
+
+                val scaledMove = velocity.cpy().scl(deltaTime)
+                val nextPos = animatablePosition.position.cpy().add(scaledMove)
+                if (nextPos.dst(target) <= animatablePosition.position.dst(target)) {
+                    animatablePosition.position = nextPos.cpy()
+                } else {
+                    animatablePosition.position = target.cpy()
+                    animatablePosition.path.removeAt(0)
+                }
             }
         }
     }
 
-    private class bfsTile(val x: Int, val y: Int, val distance: Int, val predecessor: bfsTile?)
 
     private fun genBfsGraph(position: Vector2, range: Int): Map<Int, bfsTile> {
         // BFS setup
@@ -122,6 +126,18 @@ class Movement : EntitySystem() {
             }
         }
         return listed
+    }
+
+    private fun getPath(tiles: Map<Int, bfsTile>, pos : Vector2) : List<bfsTile>{
+        val id = pos.x.toInt() + pos.y.toInt() * state.viewport.worldWidth.toInt()
+        val path = mutableListOf<bfsTile>()
+        var next = tiles.get(id)
+        while (next != null){
+            path.add(next)
+            next = next.predecessor
+        }
+
+        return path.reversed()
     }
 
     private fun drawRange(tiles: Collection<bfsTile>) {
