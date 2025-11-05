@@ -79,7 +79,6 @@ import com.badlogic.gdx.tools.texturepacker.TexturePacker
 
 task texturePacker {
   doLast {
-    logger.info "Calling TexturePacker"
-    TexturePacker.process("assets/raw/robot1/01_Idle", "assets/animations/robot1/01_Idle", "idle")
+    TexturePacker.process("${project.rootDir}/assets/raw/robot1", "${project.rootDir}/assets/animations/robot1", "robot1")
   }
 }

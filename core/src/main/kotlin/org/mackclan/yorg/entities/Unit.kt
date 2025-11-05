@@ -10,7 +10,7 @@ import kotlin.random.Random
 fun createUnit(xPos: Float, yPos: Float, walkRange: Int, playerControlled: Boolean): Entity {
     val entity = Entity()
     //entity.add(SpriteComponent(xPos, yPos, if (playerControlled) "graphics/mech.png" else "graphics/mech2.png"))
-    entity.add(AnimationComponent("animations/robot1/idle.atlas", Random.nextFloat()))
+    entity.add(AnimationComponent("animations/robot1/robot1.atlas", Random.nextFloat()))
     entity.add(AnimatablePosition(xPos, yPos))
     entity.add(Controlled(walkRange, playerControlled))
     entity.add(UnitInfo())
