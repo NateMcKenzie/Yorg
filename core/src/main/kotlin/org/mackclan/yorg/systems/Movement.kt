@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.*
+import org.mackclan.yorg.components.Animations
 import org.mackclan.yorg.utils.bfsTile
 import kotlin.math.abs
 
@@ -19,6 +20,7 @@ class Movement : EntitySystem() {
 
     private val spriteMap = ComponentMapper.getFor(SpriteComponent::class.java)
     private val animatablePositionMap = ComponentMapper.getFor(AnimatablePosition::class.java)
+    private val animationMap = ComponentMapper.getFor(AnimationComponent::class.java)
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val shapeRenderer by lazy { ShapeRenderer() }
     private val screenViewport by lazy { ScreenViewport() }
@@ -47,9 +49,10 @@ class Movement : EntitySystem() {
         // Render Ranges
         state.viewport.apply()
         for (entity in movables) {
+            val animatablePosition = animatablePositionMap.get(entity)
+            val animation = animationMap.get(entity)
             // Move selected unit if needed
             if (entity == state.selected) {
-                val animatablePosition = animatablePositionMap.get(entity)
                 val controlled = controlledMap.get(entity)
                 val tiles = genBfsGraph(animatablePosition.position, controlled.walkRange)
                 drawRange(tiles.values)
@@ -57,6 +60,7 @@ class Movement : EntitySystem() {
                     val desiredTile =
                             tiles.get(moveLocation.x.toInt() + moveLocation.y.toInt() * state.viewport.worldWidth.toInt())
                     if (desiredTile != null && controlled.actionPoints > 0) {
+                        animation.activeAnimation = Animations.run
                         animatablePosition.path.clear()
                         animatablePosition.path.addAll(smoothPath(getPath(tiles, moveLocation)))
                         controlled.desiredMove = null
@@ -68,7 +72,6 @@ class Movement : EntitySystem() {
             }
 
             // Animate movement of any moving unit
-            val animatablePosition = animatablePositionMap.get(entity)
             if (animatablePosition.path.isNotEmpty()){
                 val nextTile = animatablePosition.path.get(0)
                 val target = Vector2(nextTile.x.toFloat(), nextTile.y.toFloat())
@@ -85,6 +88,8 @@ class Movement : EntitySystem() {
                 } else {
                     animatablePosition.position = target.cpy()
                     animatablePosition.path.removeAt(0)
+                    if(animatablePosition.path.isEmpty())
+                        animation.activeAnimation = Animations.idle
                 }
             }
         }

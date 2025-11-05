@@ -33,7 +33,7 @@ class Animation : EntitySystem() {
         for (entity in entities) {
             val animation = animationComponentMap.get(entity)
             val position = animatablePositionMap.get(entity)
-            val frame = animation.animation.getKeyFrame(animation.time, true)
+            val frame = animation.animations[animation.activeAnimation.ordinal].getKeyFrame(animation.time, true)
             batch.draw(frame, position.position.x, position.position.y, 1f, 1f)
             animation.time += deltaTime
         }
