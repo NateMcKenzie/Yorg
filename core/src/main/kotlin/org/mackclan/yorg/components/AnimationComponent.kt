@@ -12,7 +12,7 @@ class AnimationComponent(fileName: String, var time: Float = 0f) : Component {
         val atlas: TextureAtlas = TextureAtlas(fileName)
         animations = listOf(
             Animation<TextureRegion>(0.1667f, atlas.findRegions("idle"), Animation.PlayMode.LOOP),
-            Animation<TextureRegion>(0.1667f, atlas.findRegions("run"), Animation.PlayMode.LOOP),
+            Animation<TextureRegion>(0.0834f, atlas.findRegions("run"), Animation.PlayMode.LOOP),
         )
     }
 }

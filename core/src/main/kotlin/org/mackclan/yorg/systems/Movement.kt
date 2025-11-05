@@ -63,6 +63,12 @@ class Movement : EntitySystem() {
                         animation.activeAnimation = Animations.run
                         animatablePosition.path.clear()
                         animatablePosition.path.addAll(smoothPath(getPath(tiles, moveLocation)))
+                        val target = Vector2(animatablePosition.path.get(0).x.toFloat(), animatablePosition.path.get(0).y.toFloat())
+                        animatablePosition.velocity = target
+                                    .cpy()
+                                    .sub(animatablePosition.position)
+                                    .nor()
+                                    .scl(animatablePosition.speed)
                         controlled.desiredMove = null
                         controlled.actionPoints -= 1
                         if (controlled.actionPoints <= 0) spendUnit(controlled, state)
@@ -73,23 +79,25 @@ class Movement : EntitySystem() {
 
             // Animate movement of any moving unit
             if (animatablePosition.path.isNotEmpty()){
-                val nextTile = animatablePosition.path.get(0)
-                val target = Vector2(nextTile.x.toFloat(), nextTile.y.toFloat())
-                val velocity = target
-                            .cpy()
-                            .sub(animatablePosition.position)
-                            .nor()
-                            .scl(animatablePosition.speed)
-
-                val scaledMove = velocity.cpy().scl(deltaTime)
+                val target = Vector2(animatablePosition.path.get(0).x.toFloat(), animatablePosition.path.get(0).y.toFloat())
+                val scaledMove = animatablePosition.velocity.cpy().scl(deltaTime)
                 val nextPos = animatablePosition.position.cpy().add(scaledMove)
+
                 if (nextPos.dst(target) <= animatablePosition.position.dst(target)) {
                     animatablePosition.position = nextPos.cpy()
                 } else {
-                    animatablePosition.position = target.cpy()
                     animatablePosition.path.removeAt(0)
-                    if(animatablePosition.path.isEmpty())
+                    animatablePosition.position = target.cpy()
+                    if(animatablePosition.path.isEmpty()){
                         animation.activeAnimation = Animations.idle
+                    } else {
+                        val newTarget = Vector2(animatablePosition.path.get(0).x.toFloat(), animatablePosition.path.get(0).y.toFloat())
+                        animatablePosition.velocity = newTarget
+                                    .cpy()
+                                    .sub(animatablePosition.position)
+                                    .nor()
+                                    .scl(animatablePosition.speed)
+                    }
                 }
             }
         }

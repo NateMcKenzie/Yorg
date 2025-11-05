@@ -34,7 +34,10 @@ class Animation : EntitySystem() {
             val animation = animationComponentMap.get(entity)
             val position = animatablePositionMap.get(entity)
             val frame = animation.animations[animation.activeAnimation.ordinal].getKeyFrame(animation.time, true)
-            batch.draw(frame, position.position.x, position.position.y, 1f, 1f)
+            if (position.velocity.x < 1)
+                batch.draw(frame, position.position.x + 1, position.position.y, -1f, 1f)
+            else
+                batch.draw(frame, position.position.x, position.position.y, 1f, 1f)
             animation.time += deltaTime
         }
         batch.end()
