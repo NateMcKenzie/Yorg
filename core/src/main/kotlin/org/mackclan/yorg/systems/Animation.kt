@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import org.mackclan.yorg.components.AnimatablePosition
 import org.mackclan.yorg.components.AnimationComponent
 import org.mackclan.yorg.components.GameState
+import org.mackclan.yorg.components.Directions
 
 class Animation : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
@@ -34,7 +35,7 @@ class Animation : EntitySystem() {
             val animation = animationComponentMap.get(entity)
             val position = animatablePositionMap.get(entity)
             val frame = animation.animations[animation.activeAnimation.ordinal].getKeyFrame(animation.time, true)
-            if (position.velocity.x < 1)
+            if (animation.facing == Directions.left)
                 batch.draw(frame, position.position.x + 1, position.position.y, -1f, 1f)
             else
                 batch.draw(frame, position.position.x, position.position.y, 1f, 1f)

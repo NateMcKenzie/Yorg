@@ -72,13 +72,34 @@ size: 2048, 2048
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-run
+idle
   rotate: false
-  xy: 2, 2
-  size: 1145, 1102
-  orig: 1145, 1102
+  xy: 2, 1020
+  size: 982, 1012
+  orig: 982, 1012
+  offset: 0, 0
+  index: 8
+turn_to_run
+  rotate: false
+  xy: 986, 1018
+  size: 1005, 1014
+  orig: 1005, 1014
   offset: 0, 0
   index: 0
+turn_to_run
+  rotate: false
+  xy: 2, 2
+  size: 1005, 1014
+  orig: 1005, 1014
+  offset: 0, 0
+  index: 1
+turn_to_run
+  rotate: false
+  xy: 1009, 2
+  size: 1005, 1014
+  orig: 1005, 1014
+  offset: 0, 0
+  index: 2
 
 robot1-4.png
 size: 2048, 2048
@@ -91,7 +112,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 1
+  index: 0
 
 robot1-5.png
 size: 2048, 2048
@@ -104,7 +125,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 2
+  index: 1
 
 robot1-6.png
 size: 2048, 2048
@@ -117,7 +138,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 3
+  index: 2
 
 robot1-7.png
 size: 2048, 2048
@@ -130,7 +151,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 4
+  index: 3
 
 robot1-8.png
 size: 2048, 2048
@@ -143,7 +164,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 5
+  index: 4
 
 robot1-9.png
 size: 2048, 2048
@@ -156,7 +177,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 6
+  index: 5
 
 robot1-10.png
 size: 2048, 2048
@@ -169,7 +190,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 7
+  index: 6
 
 robot1-11.png
 size: 2048, 2048
@@ -182,7 +203,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 8
+  index: 7
 
 robot1-12.png
 size: 2048, 2048
@@ -195,7 +216,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 9
+  index: 8
 
 robot1-13.png
 size: 2048, 2048
@@ -208,7 +229,7 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 10
+  index: 9
 
 robot1-14.png
 size: 2048, 2048
@@ -221,17 +242,30 @@ run
   size: 1145, 1102
   orig: 1145, 1102
   offset: 0, 0
-  index: 11
+  index: 10
 
 robot1-15.png
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+run
+  rotate: false
+  xy: 2, 2
+  size: 1145, 1102
+  orig: 1145, 1102
+  offset: 0, 0
+  index: 11
+
+robot1-16.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-idle
+turn_to_run
   rotate: false
   xy: 2, 2
-  size: 982, 1012
-  orig: 982, 1012
+  size: 1005, 1014
+  orig: 1005, 1014
   offset: 0, 0
-  index: 8
+  index: 3
