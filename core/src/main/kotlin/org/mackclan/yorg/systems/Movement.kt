@@ -47,10 +47,10 @@ class Movement : EntitySystem() {
 
     override fun update(deltaTime: Float) {
         // Render Ranges
-        state.viewport.apply()
         for (entity in movables) {
             val animatablePosition = animatablePositionMap.get(entity)
             val animation = animationMap.get(entity)
+
             // Move selected unit if needed
             if (entity == state.selected) {
                 val controlled = controlledMap.get(entity)
@@ -142,6 +142,7 @@ class Movement : EntitySystem() {
                     if (tile.first < 0 || tile.second < 0 || tile.first >= worldWidth || tile.second >= worldHeight)
                         continue
                     val id = tile.first + tile.second * worldWidth
+                    // TODO: Other units should also be considered obstacles
                     if (!listed.contains(id) && !obstacles[tile.second][tile.first]) {
                         val nextTile =
                                 bfsTile(tile.first, tile.second, current.distance + 1, current)
