@@ -19,7 +19,9 @@ class Movement : EntitySystem() {
     private lateinit var state: GameState
 
     private val spriteMap = ComponentMapper.getFor(SpriteComponent::class.java)
-    private val animatablePositionMap = ComponentMapper.getFor(AnimatablePosition::class.java)
+    private val positionMap = ComponentMapper.getFor(Position::class.java)
+    private val velocityMap = ComponentMapper.getFor(Velocity::class.java)
+    private val travelPathMap = ComponentMapper.getFor(TravelPath::class.java)
     private val animationMap = ComponentMapper.getFor(AnimationComponent::class.java)
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val shapeRenderer by lazy { ShapeRenderer() }
@@ -36,7 +38,7 @@ class Movement : EntitySystem() {
 
         movables =
                 engine.getEntitiesFor(
-                        Family.all(Controlled::class.java, AnimatablePosition::class.java).get()
+                        Family.all(Controlled::class.java, Position::class.java, Velocity::class.java, TravelPath::class.java).get()
                 )
 
         engine.getEntitiesFor(Family.all(Cover::class.java).get()).forEach { obstacle ->
@@ -48,27 +50,29 @@ class Movement : EntitySystem() {
     override fun update(deltaTime: Float) {
         // Render Ranges
         for (entity in movables) {
-            val animatablePosition = animatablePositionMap.get(entity)
+            val position = positionMap.get(entity)
+            val velocity = velocityMap.get(entity)
+            val path = travelPathMap.get(entity)
             val animation = animationMap.get(entity)
 
             // Move selected unit if needed
             if (entity == state.selected) {
                 val controlled = controlledMap.get(entity)
-                val tiles = genBfsGraph(animatablePosition.position, controlled.walkRange)
+                val tiles = genBfsGraph(position.position, controlled.walkRange)
                 drawRange(tiles.values)
                 controlled.desiredMove?.let { moveLocation ->
                     val desiredTile =
                             tiles.get(moveLocation.x.toInt() + moveLocation.y.toInt() * state.viewport.worldWidth.toInt())
                     if (desiredTile != null && controlled.actionPoints > 0) {
-                        animatablePosition.path.clear()
-                        animatablePosition.path.addAll(smoothPath(getPath(tiles, moveLocation)))
-                        val target = Vector2(animatablePosition.path.get(0).x.toFloat(), animatablePosition.path.get(0).y.toFloat())
-                        animatablePosition.velocity = target
+                        path.path.clear()
+                        path.path.addAll(smoothPath(getPath(tiles, moveLocation)))
+                        val target = Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
+                        velocity.velocity = target
                                     .cpy()
-                                    .sub(animatablePosition.position)
+                                    .sub(position.position)
                                     .nor()
-                                    .scl(animatablePosition.speed)
-                        val newFacing = if (animatablePosition.velocity.x < 1) Directions.left else Directions.right
+                                    .scl(velocity.speed)
+                        val newFacing = if (velocity.velocity.x < 1) Directions.left else Directions.right
                         animation.activeAnimation = if (newFacing == animation.facing) Animations.run else Animations.turn_to_run
                         animation.facing = newFacing
                         animation.time = 0f
@@ -81,34 +85,34 @@ class Movement : EntitySystem() {
             }
 
             // Animate movement of any moving unit
-            if (animatablePosition.path.isNotEmpty()){
+            if (path.path.isNotEmpty()){
                 if (animation.activeAnimation == Animations.turn_to_run){
                     if(animation.animations.get(Animations.turn_to_run.ordinal).isAnimationFinished(animation.time)){
                         animation.activeAnimation = Animations.run
                         animation.time = 0f
                     }
                 } else if(animation.activeAnimation == Animations.run){
-                    animation.facing = if (animatablePosition.velocity.x < 1) Directions.left else Directions.right
+                    animation.facing = if (velocity.velocity.x < 1) Directions.left else Directions.right
 
-                    val target = Vector2(animatablePosition.path.get(0).x.toFloat(), animatablePosition.path.get(0).y.toFloat())
-                    val scaledMove = animatablePosition.velocity.cpy().scl(deltaTime)
-                    val nextPos = animatablePosition.position.cpy().add(scaledMove)
+                    val target = Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
+                    val scaledMove = velocity.velocity.cpy().scl(deltaTime)
+                    val nextPos = position.position.cpy().add(scaledMove)
 
-                    if (nextPos.dst(target) <= animatablePosition.position.dst(target)) {
-                        animatablePosition.position = nextPos.cpy()
+                    if (nextPos.dst(target) <= position.position.dst(target)) {
+                        position.position = nextPos.cpy()
                     } else {
-                        animatablePosition.path.removeAt(0)
-                        animatablePosition.position = target.cpy()
-                        if(animatablePosition.path.isEmpty()){
+                        path.path.removeAt(0)
+                        position.position = target.cpy()
+                        if(path.path.isEmpty()){
                             animation.activeAnimation = Animations.idle
                             animation.time = 0f
                         } else {
-                            val newTarget = Vector2(animatablePosition.path.get(0).x.toFloat(), animatablePosition.path.get(0).y.toFloat())
-                            animatablePosition.velocity = newTarget
+                            val newTarget = Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
+                            velocity.velocity = newTarget
                                         .cpy()
-                                        .sub(animatablePosition.position)
+                                        .sub(position.position)
                                         .nor()
-                                        .scl(animatablePosition.speed)
+                                        .scl(velocity.speed)
                         }
                     }
                 }

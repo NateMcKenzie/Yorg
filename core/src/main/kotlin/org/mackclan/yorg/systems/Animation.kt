@@ -10,20 +10,21 @@ import org.mackclan.yorg.components.AnimationComponent
 import org.mackclan.yorg.components.GameState
 import org.mackclan.yorg.components.Directions
 import org.mackclan.yorg.components.Animations
+import org.mackclan.yorg.components.Position
 
 class Animation : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
     private lateinit var state: GameState
 
     private val animationComponentMap = ComponentMapper.getFor(AnimationComponent::class.java)
-    private val animatablePositionMap = ComponentMapper.getFor(AnimatablePosition::class.java)
+    private val positionMap = ComponentMapper.getFor(Position::class.java)
     private val batch by lazy { SpriteBatch() }
     private val shapeRenderer by lazy { ShapeRenderer() }
     private val screenViewport by lazy { ScreenViewport() }
 
     override fun addedToEngine(engine: Engine) {
         entities =
-            engine.getEntitiesFor(Family.all(AnimationComponent::class.java, AnimatablePosition::class.java).get())
+            engine.getEntitiesFor(Family.all(AnimationComponent::class.java, Position::class.java).get())
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
     }
@@ -34,7 +35,7 @@ class Animation : EntitySystem() {
         batch.begin()
         for (entity in entities) {
             val animation = animationComponentMap.get(entity)
-            val position = animatablePositionMap.get(entity)
+            val position = positionMap.get(entity)
             val frame = animation.animations[animation.activeAnimation.ordinal].getKeyFrame(animation.time, true)
 
             // Default back to idle

@@ -18,7 +18,7 @@ class Render : EntitySystem() {
     private lateinit var state: GameState
 
     private val spriteComponentMap = ComponentMapper.getFor(SpriteComponent::class.java)
-    private val animatablePositionMap = ComponentMapper.getFor(AnimatablePosition::class.java)
+    private val positionMap = ComponentMapper.getFor(Position::class.java)
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val unitInfoMap = ComponentMapper.getFor(UnitInfo::class.java)
     private val batch by lazy { SpriteBatch() }
@@ -31,7 +31,7 @@ class Render : EntitySystem() {
         sprites = engine.getEntitiesFor(Family.all(SpriteComponent::class.java).get())
         movables =
                 engine.getEntitiesFor(
-                        Family.all(Controlled::class.java, AnimatablePosition::class.java).get()
+                        Family.all(Controlled::class.java, Position::class.java).get()
                 )
         val gameState = engine.getEntitiesFor(Family.all(GameState::class.java).get()).first()
         state = gameState.components.first() as GameState
@@ -55,7 +55,7 @@ class Render : EntitySystem() {
         batch.begin()
         for (entity in movables) {
             val info = unitInfoMap.get(entity)
-            val position = animatablePositionMap.get(entity).position
+            val position = positionMap.get(entity).position
             val health = info.health.toString()
 
             // Need to convert between coordinate systems
@@ -106,7 +106,7 @@ class Render : EntitySystem() {
 
         // Draw highlight around selected unit
         selected?.let { unit ->
-            val position = animatablePositionMap.get(unit).position
+            val position = positionMap.get(unit).position
             shapeRenderer.color = Color.YELLOW
             shapeRenderer.rect(
                     position.x,

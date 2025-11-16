@@ -6,6 +6,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.Vector2
 import org.mackclan.yorg.components.*
 import org.mackclan.yorg.entities.createPopup
+import org.mackclan.yorg.entities.createProjectile
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -15,7 +16,7 @@ class Clicks : EntitySystem() {
 
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val spriteComponentMap = ComponentMapper.getFor(SpriteComponent::class.java)
-    private val animatablePositionMap = ComponentMapper.getFor(AnimatablePosition::class.java)
+    private val positionMap = ComponentMapper.getFor(Position::class.java)
     private val animationComponentMap = ComponentMapper.getFor(AnimationComponent::class.java)
     private val unitInfoMap = ComponentMapper.getFor(UnitInfo::class.java)
     private val coverMap = ComponentMapper.getFor(Cover::class.java)
@@ -25,7 +26,7 @@ class Clicks : EntitySystem() {
     override fun addedToEngine(engine: Engine) {
         entities =
             engine.getEntitiesFor(
-                Family.all(AnimatablePosition::class.java, Controlled::class.java).get()
+                Family.all(Position::class.java, Controlled::class.java).get()
             )
         obstacles =
             engine.getEntitiesFor(
@@ -45,14 +46,14 @@ class Clicks : EntitySystem() {
 
             var clickedEntity: Entity? = null
             for (entity in entities) {
-                val position = animatablePositionMap.get(entity).position
+                val position = positionMap.get(entity).position
                 if (position.x == touchPos.x && position.y == touchPos.y) {
                     clickedEntity = entity
                 }
             }
             if (clickedEntity != null) {
                 val controlled = controlledMap.get(clickedEntity)
-                val clickedPosition = animatablePositionMap.get(clickedEntity).position
+                val clickedPosition = positionMap.get(clickedEntity).position
                 if (state.playerTurn == controlled.playerControlled) {
                     // Select clicked unit
                     if (controlled.actionPoints > 0) {
@@ -61,7 +62,7 @@ class Clicks : EntitySystem() {
                 } else {
                     // Open shoot popup
                     state.selected?.let { selected ->
-                        val selectedPosition = animatablePositionMap.get(selected).position
+                        val selectedPosition = positionMap.get(selected).position
                         val selectedInfo = unitInfoMap.get(selected)
                         val selectedControlled = controlledMap.get(selected)
                         if (selectedControlled.actionPoints > 0) {
@@ -91,6 +92,7 @@ class Clicks : EntitySystem() {
                                     val animation = animationComponentMap.get(selected)
                                     animation.activeAnimation = Animations.fire
                                     animation.time = 0f
+                                    engine.addEntity(createProjectile(selectedPosition, clickedPosition))
                                     spendUnit(selectedControlled, state)
                                 }
                             engine.addEntity(popup)
