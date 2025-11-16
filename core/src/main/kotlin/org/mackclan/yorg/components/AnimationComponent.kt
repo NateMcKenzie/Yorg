@@ -15,6 +15,7 @@ class AnimationComponent(fileName: String, var time: Float = 0f) : Component {
             Animation<TextureRegion>(0.1667f, atlas.findRegions("idle"), Animation.PlayMode.LOOP),
             Animation<TextureRegion>(0.0834f, atlas.findRegions("run"), Animation.PlayMode.LOOP),
             Animation<TextureRegion>(0.0417f, atlas.findRegions("turn_to_run"), Animation.PlayMode.NORMAL),
+            Animation<TextureRegion>(0.0417f, atlas.findRegions("fire"), Animation.PlayMode.NORMAL),
         )
     }
 }
@@ -23,6 +24,7 @@ enum class Animations {
     idle,
     run,
     turn_to_run,
+    fire,
 }
 
 enum class Directions {

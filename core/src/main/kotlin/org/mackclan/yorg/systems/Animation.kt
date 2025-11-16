@@ -9,6 +9,7 @@ import org.mackclan.yorg.components.AnimatablePosition
 import org.mackclan.yorg.components.AnimationComponent
 import org.mackclan.yorg.components.GameState
 import org.mackclan.yorg.components.Directions
+import org.mackclan.yorg.components.Animations
 
 class Animation : EntitySystem() {
     private lateinit var entities: ImmutableArray<Entity>
@@ -35,6 +36,13 @@ class Animation : EntitySystem() {
             val animation = animationComponentMap.get(entity)
             val position = animatablePositionMap.get(entity)
             val frame = animation.animations[animation.activeAnimation.ordinal].getKeyFrame(animation.time, true)
+
+            // Default back to idle
+            // TODO: Might be able to move more animation logic into here by reading state similarly
+            if (animation.animations.get(animation.activeAnimation.ordinal).isAnimationFinished(animation.time)){
+                animation.activeAnimation = Animations.idle
+            }
+
             if (animation.facing == Directions.left)
                 batch.draw(frame, position.position.x + 1, position.position.y, -1f, 1f)
             else

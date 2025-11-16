@@ -16,6 +16,7 @@ class Clicks : EntitySystem() {
     private val controlledMap = ComponentMapper.getFor(Controlled::class.java)
     private val spriteComponentMap = ComponentMapper.getFor(SpriteComponent::class.java)
     private val animatablePositionMap = ComponentMapper.getFor(AnimatablePosition::class.java)
+    private val animationComponentMap = ComponentMapper.getFor(AnimationComponent::class.java)
     private val unitInfoMap = ComponentMapper.getFor(UnitInfo::class.java)
     private val coverMap = ComponentMapper.getFor(Cover::class.java)
 
@@ -87,6 +88,9 @@ class Clicks : EntitySystem() {
                                         info.health -= damage
                                         if (info.health <= 0) engine.removeEntity(clickedEntity)
                                     }
+                                    val animation = animationComponentMap.get(selected)
+                                    animation.activeAnimation = Animations.fire
+                                    animation.time = 0f
                                     spendUnit(selectedControlled, state)
                                 }
                             engine.addEntity(popup)
