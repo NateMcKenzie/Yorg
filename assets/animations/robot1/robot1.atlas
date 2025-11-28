@@ -223,6 +223,13 @@ fire
   size: 1194, 1094
   orig: 1194, 1094
   offset: 0, 0
+  index: 11
+fire
+  rotate: false
+  xy: 2, 2
+  size: 1194, 1094
+  orig: 1194, 1094
+  offset: 0, 0
   index: 10
 fire
   rotate: false
@@ -238,13 +245,6 @@ fire
   orig: 1194, 1094
   offset: 0, 0
   index: 9
-fire
-  rotate: false
-  xy: 2, 2
-  size: 1194, 1094
-  orig: 1194, 1094
-  offset: 0, 0
-  index: 11
 
 robot1-13.png
 size: 2048, 2048

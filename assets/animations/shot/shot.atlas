@@ -1,0 +1,143 @@
+
+shot.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 0
+
+shot2.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 1
+
+shot3.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 2
+
+shot4.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 3
+
+shot5.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 4
+
+shot6.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 5
+
+shot7.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 6
+
+shot8.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 7
+
+shot9.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 8
+
+shot10.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 9
+
+shot11.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+shot
+  rotate: false
+  xy: 2, 2
+  size: 1020, 1020
+  orig: 1020, 1020
+  offset: 0, 0
+  index: 10

@@ -80,5 +80,6 @@ import com.badlogic.gdx.tools.texturepacker.TexturePacker
 task texturePacker {
   doLast {
     TexturePacker.process("${project.rootDir}/assets/raw/robot1", "${project.rootDir}/assets/animations/robot1", "robot1")
+    TexturePacker.process("${project.rootDir}/assets/raw/shot", "${project.rootDir}/assets/animations/shot", "shot")
   }
 }
