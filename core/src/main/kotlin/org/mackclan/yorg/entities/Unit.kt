@@ -11,7 +11,7 @@ import kotlin.random.Random
 
 fun createUnit(xPos: Float, yPos: Float, walkRange: Int, playerControlled: Boolean): Entity {
     val entity = Entity()
-    entity.add(AnimationComponent("animations/robot1/robot1.atlas", Random.nextFloat()))
+    entity.add(AnimationComponent(Random.nextFloat()))
     entity.add(TravelPath())
     entity.add(Velocity())
     entity.add(Position(xPos, yPos))

@@ -14,11 +14,12 @@ class GameView : ApplicationListener {
 
     // Systems
     private val render by lazy { Render() }
-    private val movement by lazy { Movement() }
+    private val unitMovement by lazy { UnitMovement() }
     private val clicks by lazy { Clicks() }
     private val hud by lazy { HUD() }
     private val turn by lazy { Turn() }
-    private val animation by lazy { Animation() }
+    private val unitAnimation by lazy { UnitAnimation() }
+    private val projectileAnimation by lazy { ProjectileAnimation() }
 
     override fun create() {
         engine.addEntity(createUnit(10f, 8f, 5, true))
@@ -39,27 +40,30 @@ class GameView : ApplicationListener {
         engine.addEntity(createGameState())
 
         engine.addSystem(render)
-        engine.addSystem(movement)
+        engine.addSystem(unitMovement)
         engine.addSystem(clicks)
         engine.addSystem(hud)
         engine.addSystem(turn)
-        engine.addSystem(animation)
+        engine.addSystem(unitAnimation)
+        engine.addSystem(projectileAnimation)
     }
 
     override fun resize(width: Int, height: Int) {
         render.resize(width, height)
-        movement.resize(width, height)
+        unitMovement.resize(width, height)
         hud.resize(width, height)
-        animation.resize(width, height)
+        unitAnimation.resize(width, height)
+        projectileAnimation.resize(width, height)
     }
 
     override fun render() {
         render.update(Gdx.graphics.deltaTime)
         clicks.update(Gdx.graphics.deltaTime)
-        movement.update(Gdx.graphics.deltaTime)
+        unitMovement.update(Gdx.graphics.deltaTime)
         hud.update(Gdx.graphics.deltaTime)
         turn.update(Gdx.graphics.deltaTime)
-        animation.update(Gdx.graphics.deltaTime)
+        unitAnimation.update(Gdx.graphics.deltaTime)
+        projectileAnimation.update(Gdx.graphics.deltaTime)
     }
 
     override fun pause() {

@@ -92,7 +92,7 @@ class Clicks : EntitySystem() {
                                     val animation = animationComponentMap.get(selected)
                                     animation.activeAnimation = Animations.fire
                                     animation.time = 0f
-                                    engine.addEntity(createProjectile(selectedPosition, clickedPosition))
+                                    engine.addEntity(createProjectile(selectedPosition.cpy(), clickedPosition.cpy()))
                                     spendUnit(selectedControlled, state)
                                 }
                             engine.addEntity(popup)

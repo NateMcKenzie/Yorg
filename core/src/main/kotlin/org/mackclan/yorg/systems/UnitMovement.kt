@@ -8,12 +8,12 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import kotlin.math.abs
 import org.mackclan.yorg.components.*
 import org.mackclan.yorg.components.Animations
 import org.mackclan.yorg.utils.bfsTile
-import kotlin.math.abs
 
-class Movement : EntitySystem() {
+class UnitMovement : EntitySystem() {
     private lateinit var movables: ImmutableArray<Entity>
     private lateinit var obstacles: MutableList<MutableList<Boolean>>
     private lateinit var state: GameState
@@ -38,7 +38,13 @@ class Movement : EntitySystem() {
 
         movables =
                 engine.getEntitiesFor(
-                        Family.all(Controlled::class.java, Position::class.java, Velocity::class.java, TravelPath::class.java).get()
+                        Family.all(
+                                        Controlled::class.java,
+                                        Position::class.java,
+                                        Velocity::class.java,
+                                        TravelPath::class.java
+                                )
+                                .get()
                 )
 
         engine.getEntitiesFor(Family.all(Cover::class.java).get()).forEach { obstacle ->
@@ -62,64 +68,60 @@ class Movement : EntitySystem() {
                 drawRange(tiles.values)
                 controlled.desiredMove?.let { moveLocation ->
                     val desiredTile =
-                            tiles.get(moveLocation.x.toInt() + moveLocation.y.toInt() * state.viewport.worldWidth.toInt())
+                            tiles.get(
+                                    moveLocation.x.toInt() +
+                                            moveLocation.y.toInt() *
+                                                    state.viewport.worldWidth.toInt()
+                            )
                     if (desiredTile != null && controlled.actionPoints > 0) {
                         path.path.clear()
                         path.path.addAll(smoothPath(getPath(tiles, moveLocation)))
-                        val target = Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
-                        velocity.velocity = target
-                                    .cpy()
-                                    .sub(position.position)
-                                    .nor()
-                                    .scl(velocity.speed)
-                        val newFacing = if (velocity.velocity.x < 1) Directions.left else Directions.right
-                        animation.activeAnimation = if (newFacing == animation.facing) Animations.run else Animations.turn_to_run
+                        val target =
+                            Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
+                        velocity.direction =
+                            target.cpy().sub(position.position).nor().scl(velocity.speed)
+                        val newFacing =
+                            if (velocity.direction.x < 1) Directions.left else Directions.right
+                        animation.activeAnimation =
+                            if (newFacing == animation.facing) Animations.run
+                            else Animations.turn_to_run
                         animation.facing = newFacing
                         animation.time = 0f
-                        controlled.desiredMove = null
                         controlled.actionPoints -= 1
                         if (controlled.actionPoints <= 0) spendUnit(controlled, state)
                     }
+                    controlled.desiredMove = null
                 }
                 // TODO: Implement two action point moves
             }
 
             // Animate movement of any moving unit
-            if (path.path.isNotEmpty()){
-                if (animation.activeAnimation == Animations.turn_to_run){
-                    if(animation.animations.get(Animations.turn_to_run.ordinal).isAnimationFinished(animation.time)){
-                        animation.activeAnimation = Animations.run
+            if (path.path.isNotEmpty() && animation.activeAnimation == Animations.run) {
+                animation.facing =
+                        if (velocity.direction.x < 1) Directions.left else Directions.right
+
+                val target = Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
+                val scaledMove = velocity.direction.cpy().scl(deltaTime)
+                val nextPos = position.position.cpy().add(scaledMove)
+
+                if (nextPos.dst(target) <= position.position.dst(target)) {
+                    position.position = nextPos.cpy()
+                } else {
+                    path.path.removeAt(0)
+                    position.position = target.cpy()
+                    if (path.path.isEmpty()) {
+                        animation.activeAnimation = Animations.idle
                         animation.time = 0f
-                    }
-                } else if(animation.activeAnimation == Animations.run){
-                    animation.facing = if (velocity.velocity.x < 1) Directions.left else Directions.right
-
-                    val target = Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
-                    val scaledMove = velocity.velocity.cpy().scl(deltaTime)
-                    val nextPos = position.position.cpy().add(scaledMove)
-
-                    if (nextPos.dst(target) <= position.position.dst(target)) {
-                        position.position = nextPos.cpy()
                     } else {
-                        path.path.removeAt(0)
-                        position.position = target.cpy()
-                        if(path.path.isEmpty()){
-                            animation.activeAnimation = Animations.idle
-                            animation.time = 0f
-                        } else {
-                            val newTarget = Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
-                            velocity.velocity = newTarget
-                                        .cpy()
-                                        .sub(position.position)
-                                        .nor()
-                                        .scl(velocity.speed)
-                        }
+                        val newTarget =
+                                Vector2(path.path.get(0).x.toFloat(), path.path.get(0).y.toFloat())
+                        velocity.direction =
+                                newTarget.cpy().sub(position.position).nor().scl(velocity.speed)
                     }
                 }
             }
         }
     }
-
 
     private fun genBfsGraph(position: Vector2, range: Int): Map<Int, bfsTile> {
         // BFS setup
@@ -143,8 +145,12 @@ class Movement : EntitySystem() {
                 for (tile in candidates) {
                     val worldWidth = state.viewport.worldWidth.toInt()
                     val worldHeight = state.viewport.worldHeight.toInt()
-                    if (tile.first < 0 || tile.second < 0 || tile.first >= worldWidth || tile.second >= worldHeight)
-                        continue
+                    if (tile.first < 0 ||
+                                    tile.second < 0 ||
+                                    tile.first >= worldWidth ||
+                                    tile.second >= worldHeight
+                    )
+                            continue
                     val id = tile.first + tile.second * worldWidth
                     // TODO: Other units should also be considered obstacles
                     if (!listed.contains(id) && !obstacles[tile.second][tile.first]) {
@@ -159,11 +165,11 @@ class Movement : EntitySystem() {
         return listed
     }
 
-    private fun getPath(tiles: Map<Int, bfsTile>, pos : Vector2) : List<bfsTile>{
+    private fun getPath(tiles: Map<Int, bfsTile>, pos: Vector2): List<bfsTile> {
         val id = pos.x.toInt() + pos.y.toInt() * state.viewport.worldWidth.toInt()
         val path = mutableListOf<bfsTile>()
         var next = tiles.get(id)
-        while (next != null){
+        while (next != null) {
             path.add(next)
             next = next.predecessor
         }
@@ -171,67 +177,66 @@ class Movement : EntitySystem() {
         return path.reversed()
     }
 
-private fun smoothPath(path: List<bfsTile>): List<bfsTile> {
-    if (path.size < 3) return path.subList(1,path.size)
+    private fun smoothPath(path: List<bfsTile>): List<bfsTile> {
+        if (path.size < 3) return path.subList(1, path.size)
 
-    val smoothed = mutableListOf(path[0])
-    var current = 0
+        val smoothed = mutableListOf(path[0])
+        var current = 0
 
-    while (current < path.size - 1) {
-        // Look ahead as far as possible
-        var farthest = current + 1
-        for (i in current + 2 ..< path.size) {
-            if (hasLineOfSight(path[current], path[i])) {
-                farthest = i
-            } else {
-                break
+        while (current < path.size - 1) {
+            // Look ahead as far as possible
+            var farthest = current + 1
+            for (i in current + 2 ..< path.size) {
+                if (hasLineOfSight(path[current], path[i])) {
+                    farthest = i
+                } else {
+                    break
+                }
             }
+
+            smoothed.add(path[farthest])
+            current = farthest
         }
 
-        smoothed.add(path[farthest])
-        current = farthest
+        smoothed.removeAt(0)
+        return smoothed
     }
 
-    smoothed.removeAt(0)
-    return smoothed
-}
+    private fun hasLineOfSight(start: bfsTile, end: bfsTile): Boolean {
+        // Bresenham's Line Algorithm
+        val dx = abs(end.x - start.x)
+        val dy = abs(end.y - start.y)
+        var x = start.x
+        var y = start.y
+        val stepX = if (end.x > start.x) 1 else -1
+        val stepY = if (end.y > start.y) 1 else -1
 
-private fun hasLineOfSight(start: bfsTile, end: bfsTile): Boolean {
-    // Bresenham's Line Algorithm
-    val dx = abs(end.x - start.x)
-    val dy = abs(end.y - start.y)
-    var x = start.x
-    var y = start.y
-    val stepX = if (end.x > start.x) 1 else -1
-    val stepY = if (end.y > start.y) 1 else -1
-
-    if (dx > dy) {
-        var err = dx / 2.0f
-        while (x != end.x) {
-            if (obstacles[y][x]) return false
-            err -= dy
-            if (err < 0) {
-                y += stepY
-                err += dx.toFloat()
-            }
-            x += stepX
-        }
-    } else {
-        var err = dy / 2.0f
-        while (y != end.y) {
-            if (obstacles[y][x]) return false
-            err -= dx
-            if (err < 0) {
+        if (dx > dy) {
+            var err = dx / 2.0f
+            while (x != end.x) {
+                if (obstacles[y][x]) return false
+                err -= dy
+                if (err < 0) {
+                    y += stepY
+                    err += dx.toFloat()
+                }
                 x += stepX
-                err += dy.toFloat()
             }
-            y += stepY
+        } else {
+            var err = dy / 2.0f
+            while (y != end.y) {
+                if (obstacles[y][x]) return false
+                err -= dx
+                if (err < 0) {
+                    x += stepX
+                    err += dy.toFloat()
+                }
+                y += stepY
+            }
         }
+
+        return true
     }
-
-    return true
-}
-
 
     private fun drawRange(tiles: Collection<bfsTile>) {
         shapeRenderer.projectionMatrix = state.viewport.camera.combined
