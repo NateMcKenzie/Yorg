@@ -14,7 +14,6 @@ import org.mackclan.yorg.components.Controlled
 import org.mackclan.yorg.components.Directions
 import org.mackclan.yorg.components.GameState
 import org.mackclan.yorg.components.Position
-import org.mackclan.yorg.components.Target
 import org.mackclan.yorg.components.Velocity
 
 class UnitAnimation : EntitySystem() {
@@ -48,7 +47,7 @@ class UnitAnimation : EntitySystem() {
                                 Animation.PlayMode.NORMAL
                         ),
                         Animation<TextureRegion>(
-                                0.0417f,
+                                0.0834f,
                                 robotAtlas.findRegions("fire"),
                                 Animation.PlayMode.NORMAL
                         ),

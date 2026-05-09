@@ -12,6 +12,9 @@ enum class Animations {
     run,
     turn_to_run,
     fire,
+    launch,
+    travel,
+    collide,
 }
 
 enum class Directions {

@@ -6,12 +6,15 @@ import org.mackclan.yorg.components.AnimationComponent
 import org.mackclan.yorg.components.Position
 import org.mackclan.yorg.components.Velocity
 import org.mackclan.yorg.components.Target
+import org.mackclan.yorg.components.Animations
 
 fun createProjectile (position : Vector2, target: Vector2): Entity {
     val entity = Entity()
-    entity.add(AnimationComponent(0f))
+    val animation = AnimationComponent(-0.7f)
+    animation.activeAnimation = Animations.launch
+    entity.add(animation)
     entity.add(Position(position.x, position.y))
     entity.add(Target(target))
-    entity.add(Velocity(0.8f, target.sub(position).nor()))
+    entity.add(Velocity(0f, target.cpy().sub(position).nor()))
     return entity
 }
